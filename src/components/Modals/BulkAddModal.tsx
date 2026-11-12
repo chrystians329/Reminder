@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Trash2, Plus } from 'lucide-react';
 import { SchoolSchedule, TaskItem, OutOfSchoolEvent, DayOfWeek, DAYS_OF_WEEK, PriorityTier } from '../../types';
 import { formatDateKey } from '../../utils/dateUtils';
+import { ModalWrapper } from './ModalWrapper';
 
 export type BulkType = 'schedule' | 'task' | 'event';
 
@@ -74,8 +75,6 @@ export const BulkAddModal: React.FC<BulkAddModalProps> = ({
     { title: '', date: today, time: '19:00', tier: 'tidak', location: '', description: '' }
   ]);
 
-  if (!isOpen) return null;
-
   const subjectOptions = Array.from(new Set(schedules.map(s => s.subject)));
 
   // Add row
@@ -115,7 +114,7 @@ export const BulkAddModal: React.FC<BulkAddModalProps> = ({
           notes: r.notes.trim() || undefined
         }));
       if (valid.length === 0) {
-        alert('Harap isi minimal 1 nama mata pelajaran!');
+        alert('Harap isi minimal 1 jadwal!');
         return;
       }
       onSaveSchedules(valid);
@@ -163,9 +162,6 @@ export const BulkAddModal: React.FC<BulkAddModalProps> = ({
     }
 
     if (type === 'schedule') {
-      // Expected format per line:
-      // Hari | Mapel | Jam Mulai | Jam Selesai | Ruang | Guru | Catatan
-      // or simply Mapel per line
       const parsed = lines.map(line => {
         const parts = line.split(/[|~]/).map(p => p.trim());
         const dayCandidates: DayOfWeek[] = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -205,8 +201,6 @@ export const BulkAddModal: React.FC<BulkAddModalProps> = ({
       });
       onSaveSchedules(parsed);
     } else if (type === 'task') {
-      // Expected format per line:
-      // Judul Tugas | Mapel | Tanggal (YYYY-MM-DD) | Jam | Detail
       const parsed = lines.map(line => {
         const parts = line.split(/[|~]/).map(p => p.trim());
         const title = parts[0] || 'Tugas Baru';
@@ -224,8 +218,6 @@ export const BulkAddModal: React.FC<BulkAddModalProps> = ({
       });
       onSaveTasks(parsed);
     } else if (type === 'event') {
-      // Expected format per line:
-      // Judul Kegiatan | Tanggal | Jam | Tier (penting/sedang/tidak) | Lokasi | Catatan
       const parsed = lines.map(line => {
         const parts = line.split(/[|~]/).map(p => p.trim());
         const title = parts[0] || 'Kegiatan Baru';
@@ -250,14 +242,14 @@ export const BulkAddModal: React.FC<BulkAddModalProps> = ({
   };
 
   const getTitle = () => {
-    if (type === 'schedule') return 'Tambah Massal Jadwal Pelajaran';
+    if (type === 'schedule') return 'Tambah Massal Jadwal';
     if (type === 'task') return 'Tambah Massal Tugas & PR';
     return 'Tambah Massal Agenda Luar';
   };
 
   const getPlaceholder = () => {
     if (type === 'schedule') {
-      return `Format per baris (pisahkan dengan ~ atau |):\nHari ~ Mata Pelajaran ~ Jam Mulai ~ Jam Selesai ~ Ruangan ~ Guru\n\nContoh:\nSenin ~ Matematika ~ 07:00 ~ 08:30 ~ R.12 ~ Pak Bambang\nSenin ~ Bahasa Indonesia ~ 08:30 ~ 10:00 ~ R.12 ~ Bu Siti\nSelasa ~ Fisika ~ 07:00 ~ 08:45 ~ Lab Fisika ~ Pak Suryo`;
+      return `Format per baris (pisahkan dengan ~ atau |):\nHari ~ Pelajaran ~ Jam Mulai ~ Jam Selesai ~ Ruangan ~ Guru\n\nContoh:\nSenin ~ Matematika ~ 07:00 ~ 08:30 ~ R.12 ~ Pak Bambang\nSenin ~ Bahasa Indonesia ~ 08:30 ~ 10:00 ~ R.12 ~ Bu Siti\nSelasa ~ Fisika ~ 07:00 ~ 08:45 ~ Lab Fisika ~ Pak Suryo`;
     }
     if (type === 'task') {
       return `Format per baris (pisahkan dengan ~ atau |):\nJudul Tugas ~ Mapel ~ Tanggal Deadline (YYYY-MM-DD) ~ Jam ~ Keterangan\n\nContoh:\nPR Matematika Hal 54 ~ Matematika ~ ${today} ~ 21:00 ~ No 1-10\nKliping Sejarah ~ Sejarah ~ ${today} ~ 18:00 ~ Rangkum bab 2`;
@@ -266,13 +258,9 @@ export const BulkAddModal: React.FC<BulkAddModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div 
-        className="w-full max-w-4xl max-h-[92vh] flex flex-col bg-white dark:bg-mono-900 border border-mono-200 dark:border-mono-800 rounded-3xl shadow-2xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="px-5 py-4 border-b border-mono-200 dark:border-mono-800 flex items-center justify-between">
+    <ModalWrapper isOpen={isOpen} onClose={onClose} maxWidth="max-w-4xl" padding="p-0" className="max-h-[92vh] flex flex-col overflow-hidden">
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-mono-200 dark:border-mono-800 flex items-center justify-between">
           <div>
             <h2 className="font-extrabold text-base sm:text-lg tracking-tight">
               {getTitle()}
@@ -666,8 +654,7 @@ export const BulkAddModal: React.FC<BulkAddModalProps> = ({
           </button>
         </div>
 
-      </div>
-    </div>
+    </ModalWrapper>
   );
 };
 

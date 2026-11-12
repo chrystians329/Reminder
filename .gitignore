@@ -23,3 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 
+# Android Build & APK
+*.apk
+*.aab
+.jdks/
+android/.gradle/
+android/app/build/
+android/build/
+local.properties
+

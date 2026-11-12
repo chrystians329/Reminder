@@ -125,14 +125,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="text-xs font-mono font-bold tracking-wider uppercase text-mono-500">
-              KALENDER & PERENCANAAN FLEKSIBEL
+              KALENDER
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1">
-              Kalender Pelajar
+              Kalender
             </h1>
-            <p className="text-xs sm:text-sm text-mono-600 dark:text-mono-400 mt-1">
-              Lihat jadwal dan rencana hari ini ~ besok ~ lusa ~ minggu depan ~ hingga bulan depan.
-            </p>
           </div>
 
           {/* Quick jump buttons */}
@@ -302,11 +299,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
           {/* Legend with ~ */}
           <div className="pt-3 border-t border-mono-200 dark:border-mono-800 text-[11px] text-mono-500 font-mono">
-            <span>SCH: Hari Sekolah</span>
-            <span className="mx-2">~</span>
+            <span>SCH: Sekolah</span>
+            <span className="mx-2"> ~ </span>
             <span>T: Tugas</span>
-            <span className="mx-2">~</span>
-            <span>A: Agenda Luar</span>
+            <span className="mx-2"> ~ </span>
+            <span>A: Agenda</span>
           </div>
         </div>
 
@@ -343,13 +340,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             {/* 1. School Schedule */}
             <div className="space-y-2 pt-2 border-t border-mono-200 dark:border-mono-800">
               <div className="flex items-center justify-between text-xs font-extrabold">
-                <span>Pelajaran ({selectedDayName})</span>
+                <span>Jadwal ({selectedDayName})</span>
                 {isSchool && (
                   <button
                     onClick={() => onOpenAddSchedule(selectedDayName as DayOfWeek)}
                     className="text-[10px] font-bold text-mono-600 dark:text-mono-400 hover:text-black dark:hover:text-white underline"
                   >
-                    + Tambah Mapel
+                    + Tambah Jadwal
                   </button>
                 )}
               </div>
@@ -357,7 +354,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               {!isSchool ? (
                 <p className="text-xs text-mono-500 italic">Libur sekolah.</p>
               ) : selectedDaySchedules.length === 0 ? (
-                <p className="text-xs text-mono-500">Belum ada mata pelajaran untuk hari {selectedDayName}.</p>
+                <p className="text-xs text-mono-500">Belum ada jadwal untuk hari {selectedDayName}.</p>
               ) : (
                 <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                   {selectedDaySchedules.map((sch) => {

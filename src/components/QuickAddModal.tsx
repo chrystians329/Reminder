@@ -1,6 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { BulkType } from './Modals/BulkAddModal';
+import { ModalWrapper } from './Modals/ModalWrapper';
 
 interface QuickAddModalProps {
   isOpen: boolean;
@@ -15,25 +16,19 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
   onSelectOption,
   onSelectBulkOption
 }) => {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div 
-        className="w-full max-w-md bg-white dark:bg-mono-900 border border-mono-200 dark:border-mono-800 rounded-3xl p-5 shadow-2xl space-y-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between pb-2 border-b border-mono-100 dark:border-mono-800">
-          <h2 className="font-extrabold text-base tracking-tight">
-            Tambah Data
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg text-mono-400 hover:text-black dark:hover:text-white"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <ModalWrapper isOpen={isOpen} onClose={onClose} maxWidth="max-w-md" padding="p-5">
+      <div className="flex items-center justify-between pb-2 border-b border-mono-100 dark:border-mono-800">
+        <h2 className="font-extrabold text-base tracking-tight">
+          Tambah Data
+        </h2>
+        <button
+          onClick={onClose}
+          className="p-1 rounded-lg text-mono-400 hover:text-black dark:hover:text-white"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
 
         <div className="space-y-3">
           
@@ -113,7 +108,6 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
           </div>
 
         </div>
-      </div>
-    </div>
+    </ModalWrapper>
   );
 };

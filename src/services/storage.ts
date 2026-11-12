@@ -11,16 +11,38 @@ const KEYS = {
   INITIALIZED: 'reminder_pelajar_initialized_v1'
 };
 
+export interface NotifReminder {
+  hDays: number; // H-minus berapa hari sebelum event
+}
+
 export interface AppSettings {
   darkMode: boolean;
-  autoHideExpiredTasks: boolean; // "lalu tugas dapat hilang jika hari itu di sudah terlewat / dihapus / di klik selesai"
+  autoHideExpiredTasks: boolean;
   notificationSound: boolean;
+  // Notifikasi Tugas
+  notifyTaskEnabled: boolean;
+  notifyTaskTime: string; // "HH:mm" default "18:30"
+  notifyTaskHDays: number; // default 1 (H-1)
+  // Notifikasi Agenda Luar
+  notifyEventEnabled: boolean;
+  notifyEventTime: string; // "HH:mm" default "18:30"
+  notifyEventReminders: NotifReminder[]; // bisa lebih dari 1, default [{hDays:1}]
+  // Legacy compat
+  notifyHMinusOne?: boolean;
+  syncRoomCode?: string;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   darkMode: false,
   autoHideExpiredTasks: true,
-  notificationSound: true
+  notificationSound: true,
+  notifyTaskEnabled: true,
+  notifyTaskTime: '18:30',
+  notifyTaskHDays: 1,
+  notifyEventEnabled: true,
+  notifyEventTime: '18:30',
+  notifyEventReminders: [{ hDays: 1 }],
+  syncRoomCode: undefined
 };
 
 export const StorageService = {
@@ -296,7 +318,14 @@ export const StorageService = {
   getSettings(): AppSettings {
     try {
       const data = localStorage.getItem(KEYS.SETTINGS);
-      return data ? { ...DEFAULT_SETTINGS, ...JSON.parse(data) } : DEFAULT_SETTINGS;
+      if (!data) return DEFAULT_SETTINGS;
+      const parsed = JSON.parse(data);
+      const merged = { ...DEFAULT_SETTINGS, ...parsed };
+      // Migrate legacy notifyHMinusOne → notifyTaskEnabled
+      if (parsed.notifyHMinusOne !== undefined && parsed.notifyTaskEnabled === undefined) {
+        merged.notifyTaskEnabled = parsed.notifyHMinusOne;
+      }
+      return merged;
     } catch {
       return DEFAULT_SETTINGS;
     }

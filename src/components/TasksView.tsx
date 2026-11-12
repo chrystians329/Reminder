@@ -36,13 +36,14 @@ export const TasksView: React.FC<TasksViewProps> = ({
   const [selectedSubject, setSelectedSubject] = useState<string>('semua');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  // Collect unique subjects from schedules and tasks
-  const subjectOptions = Array.from(
-    new Set([
-      ...schedules.map((s) => s.subject),
-      ...tasks.map((t) => t.subjectName).filter(Boolean) as string[]
-    ])
-  );
+  // Strictly follow schedules: only subjects that exist in the schedule appear in the filter!
+  const scheduleSubjects = Array.from(
+    new Set(schedules.map((s) => s.subject.trim()).filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b));
+
+  const activeSubject = (selectedSubject === 'semua' || scheduleSubjects.includes(selectedSubject)) 
+    ? selectedSubject 
+    : 'semua';
 
   // Filter tasks logic
   const filteredTasks = tasks.filter((task) => {
@@ -53,8 +54,8 @@ export const TasksView: React.FC<TasksViewProps> = ({
     if (filterTab === 'selesai' && !task.completed) return false;
     if (filterTab === 'terlewat' && (!isOverdue || task.completed)) return false;
 
-    // Subject filter
-    if (selectedSubject !== 'semua' && task.subjectName !== selectedSubject) return false;
+    // Subject filter strictly follows schedule subjects
+    if (activeSubject !== 'semua' && task.subjectName !== activeSubject) return false;
 
     // Search query
     if (searchQuery.trim()) {
@@ -264,12 +265,12 @@ export const TasksView: React.FC<TasksViewProps> = ({
 
           <div>
             <select
-              value={selectedSubject}
+              value={activeSubject}
               onChange={(e) => setSelectedSubject(e.target.value)}
               className="w-full px-3 py-2 text-xs rounded-xl bg-mono-50 dark:bg-mono-950 border border-mono-200 dark:border-mono-800 text-mono-900 dark:text-mono-100 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
             >
               <option value="semua">Semua Pelajaran</option>
-              {subjectOptions.map((subj) => (
+              {scheduleSubjects.map((subj) => (
                 <option key={subj} value={subj}>
                   {subj}
                 </option>

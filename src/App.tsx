@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   SchoolSchedule, 
   TaskItem, 
   OutOfSchoolEvent, 
   ActiveTab, 
-  DayOfWeek 
+  DayOfWeek,
+  SubTaskItem
 } from './types';
-import { StorageService } from './services/storage';
+import { StorageService, AppSettings } from './services/storage';
+import { SyncService, SyncStatus } from './services/syncService';
+import { NotificationService } from './services/notificationService';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { DashboardView } from './components/DashboardView';
@@ -20,14 +23,15 @@ import { EventModal } from './components/Modals/EventModal';
 import { BulkAddModal, BulkType } from './components/Modals/BulkAddModal';
 import { QuickAddModal } from './components/QuickAddModal';
 import { ExportImportModal } from './components/Modals/ExportImportModal';
-import { MobileGuideModal } from './components/Modals/MobileGuideModal';
+import { SyncModal } from './components/Modals/SyncModal';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [schedules, setSchedules] = useState<SchoolSchedule[]>([]);
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [events, setEvents] = useState<OutOfSchoolEvent[]>([]);
-  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [appSettings, setAppSettings] = useState<AppSettings>(StorageService.getSettings());
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>(SyncService.getStatus());
 
   // Modals state
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -48,27 +52,63 @@ export function App() {
 
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [isExportImportOpen, setIsExportImportOpen] = useState(false);
-  const [isMobileGuideOpen, setIsMobileGuideOpen] = useState(false);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 
   // Initialize and load data on mount
   useEffect(() => {
     StorageService.init();
     refreshAllData();
 
-    // Check system preference for dark mode
     const settings = StorageService.getSettings();
-    if (settings.darkMode !== undefined) {
-      setDarkMode(settings.darkMode);
-      if (settings.darkMode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setDarkMode(true);
+    setAppSettings(settings);
+    if (settings.darkMode) {
       document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
+
+    // Initialize Real-time Sync
+    SyncService.init((payload) => {
+      StorageService.saveSchedules(payload.schedules);
+      StorageService.saveTasks(payload.tasks);
+      StorageService.saveEvents(payload.events);
+      setSchedules(payload.schedules);
+      setTasks(payload.tasks);
+      setEvents(payload.events);
+    });
+
+    const unsubSyncStatus = SyncService.subscribeStatus(setSyncStatus);
+
+    // Minta izin akses penting saat pertama kali aplikasi dibuka
+    const hasAskedPermission = localStorage.getItem('reminder_initial_permission_asked');
+    if (!hasAskedPermission) {
+      setTimeout(async () => {
+        try {
+          await NotificationService.requestPermission();
+          localStorage.setItem('reminder_initial_permission_asked', 'true');
+        } catch (e) {
+          console.warn('Initial permission request:', e);
+        }
+      }, 800);
+    }
+
+    return () => unsubSyncStatus();
   }, []);
+
+  // Periodic notification check (every 5 minutes)
+  useEffect(() => {
+    if (tasks.length > 0 || events.length > 0) {
+      NotificationService.checkAll(tasks, events);
+    }
+
+    const interval = setInterval(() => {
+      const latestTasks = StorageService.getTasks();
+      const latestEvents = StorageService.getEvents();
+      NotificationService.checkAll(latestTasks, latestEvents);
+    }, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [tasks, events]);
 
   const refreshAllData = () => {
     setSchedules(StorageService.getSchedules());
@@ -76,37 +116,81 @@ export function App() {
     setEvents(StorageService.getEvents());
   };
 
+  const broadcastAll = useCallback((
+    curSchedules: SchoolSchedule[], 
+    curTasks: TaskItem[], 
+    curEvents: OutOfSchoolEvent[]
+  ) => {
+    SyncService.broadcastChange(curSchedules, curTasks, curEvents);
+  }, []);
+
   const handleToggleDarkMode = () => {
-    const nextMode = !darkMode;
-    setDarkMode(nextMode);
+    const nextMode = !appSettings.darkMode;
     if (nextMode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-    const settings = StorageService.getSettings();
-    StorageService.saveSettings({ ...settings, darkMode: nextMode });
+    const newSettings = { ...appSettings, darkMode: nextMode };
+    setAppSettings(newSettings);
+    StorageService.saveSettings(newSettings);
+  };
+
+  const handleUpdateSettings = async (updates: Partial<AppSettings>) => {
+    // If enabling any notification, request permission first
+    if (updates.notifyTaskEnabled === true || updates.notifyEventEnabled === true) {
+      const granted = await NotificationService.requestPermission();
+      if (!granted) {
+        alert('Izin notifikasi belum diberikan di browser Anda.');
+        return;
+      }
+    }
+    const newSettings = { ...appSettings, ...updates };
+    setAppSettings(newSettings);
+    StorageService.saveSettings(newSettings);
+  };
+
+  const handleTestNotification = async () => {
+    const perm = await NotificationService.getPermission();
+    if (perm !== 'granted') {
+      const granted = await NotificationService.requestPermission();
+      if (!granted) {
+        alert('Izin notifikasi tidak diberikan di perangkat Anda.');
+        return;
+      }
+    }
+    await NotificationService.sendTestNotification();
   };
 
   // --- Task Handlers ---
   const handleToggleTask = (id: string) => {
     const updated = StorageService.toggleTaskCompleted(id);
     setTasks(updated);
+    broadcastAll(schedules, updated, events);
+  };
+
+  const handleUpdateSubTasks = (taskId: string, subTasks: SubTaskItem[]) => {
+    const updated = StorageService.updateTaskSubTasks(taskId, subTasks);
+    setTasks(updated);
+    broadcastAll(schedules, updated, events);
   };
 
   const handleDeleteTask = (id: string) => {
     const updated = StorageService.deleteTask(id);
     setTasks(updated);
+    broadcastAll(schedules, updated, events);
   };
 
   const handleDeleteBulkTasks = (ids: string[]) => {
     const updated = StorageService.deleteBulkTasks(ids);
     setTasks(updated);
+    broadcastAll(schedules, updated, events);
   };
 
   const handleToggleBulkTasks = (ids: string[], completed: boolean) => {
     const updated = StorageService.toggleBulkTasks(ids, completed);
     setTasks(updated);
+    broadcastAll(schedules, updated, events);
   };
 
   const handleOpenAddTask = (subjectName?: string, defaultDate?: string) => {
@@ -124,92 +208,104 @@ export function App() {
   };
 
   const handleSaveTask = (taskData: Omit<TaskItem, 'id' | 'createdAt' | 'completed'>) => {
+    let updatedTasks: TaskItem[];
     if (editingTask) {
-      const updated = StorageService.updateTask(editingTask.id, taskData);
-      setTasks(updated);
+      updatedTasks = StorageService.updateTask(editingTask.id, taskData);
     } else {
       StorageService.addTask(taskData);
-      setTasks(StorageService.getTasks());
+      updatedTasks = StorageService.getTasks();
     }
+    setTasks(updatedTasks);
+    broadcastAll(schedules, updatedTasks, events);
   };
 
   const handlePurgeCompletedOrExpired = () => {
-    const remaining = StorageService.purgeCompletedOrExpiredTasks();
-    setTasks(remaining);
+    const updated = StorageService.purgeCompletedOrExpiredTasks();
+    setTasks(updated);
+    broadcastAll(schedules, updated, events);
   };
 
   // --- Schedule Handlers ---
-  const handleOpenAddSchedule = (defaultDay?: DayOfWeek) => {
+  const handleOpenAddSchedule = (defaultDay: DayOfWeek = 'Senin') => {
     setEditingSchedule(null);
-    setScheduleModalDefaultDay(defaultDay || 'Senin');
+    setScheduleModalDefaultDay(defaultDay);
     setIsScheduleModalOpen(true);
   };
 
-  const handleOpenEditSchedule = (sch: SchoolSchedule) => {
-    setEditingSchedule(sch);
-    setScheduleModalDefaultDay(sch.day);
+  const handleOpenEditSchedule = (schedule: SchoolSchedule) => {
+    setEditingSchedule(schedule);
+    setScheduleModalDefaultDay(schedule.day);
     setIsScheduleModalOpen(true);
+  };
+
+  const handleSaveSchedule = (scheduleData: Omit<SchoolSchedule, 'id' | 'createdAt'>) => {
+    let updatedSchedules: SchoolSchedule[];
+    if (editingSchedule) {
+      updatedSchedules = StorageService.updateSchedule(editingSchedule.id, scheduleData);
+    } else {
+      StorageService.addSchedule(scheduleData);
+      updatedSchedules = StorageService.getSchedules();
+    }
+    setSchedules(updatedSchedules);
+    broadcastAll(updatedSchedules, tasks, events);
   };
 
   const handleDeleteSchedule = (id: string) => {
     const updated = StorageService.deleteSchedule(id);
     setSchedules(updated);
+    broadcastAll(updated, tasks, events);
   };
 
   const handleDeleteBulkSchedules = (ids: string[]) => {
     const updated = StorageService.deleteBulkSchedules(ids);
     setSchedules(updated);
-  };
-
-  const handleSaveSchedule = (data: Omit<SchoolSchedule, 'id' | 'createdAt'>) => {
-    if (editingSchedule) {
-      const updated = StorageService.updateSchedule(editingSchedule.id, data);
-      setSchedules(updated);
-    } else {
-      StorageService.addSchedule(data);
-      setSchedules(StorageService.getSchedules());
-    }
+    broadcastAll(updated, tasks, events);
   };
 
   // --- Event Handlers ---
-  const handleToggleEvent = (id: string) => {
-    const updated = StorageService.toggleEventCompleted(id);
-    setEvents(updated);
-  };
-
-  const handleDeleteEvent = (id: string) => {
-    const updated = StorageService.deleteEvent(id);
-    setEvents(updated);
-  };
-
-  const handleDeleteBulkEvents = (ids: string[]) => {
-    const updated = StorageService.deleteBulkEvents(ids);
-    setEvents(updated);
-  };
-
   const handleOpenAddEvent = (defaultDate?: string) => {
     setEditingEvent(null);
     setEventModalDefaultDate(defaultDate);
     setIsEventModalOpen(true);
   };
 
-  const handleOpenEditEvent = (evt: OutOfSchoolEvent) => {
-    setEditingEvent(evt);
-    setEventModalDefaultDate(evt.date);
+  const handleOpenEditEvent = (event: OutOfSchoolEvent) => {
+    setEditingEvent(event);
+    setEventModalDefaultDate(event.date);
     setIsEventModalOpen(true);
   };
 
-  const handleSaveEvent = (data: Omit<OutOfSchoolEvent, 'id' | 'createdAt' | 'completed'>) => {
+  const handleSaveEvent = (eventData: Omit<OutOfSchoolEvent, 'id' | 'createdAt' | 'completed'>) => {
+    let updatedEvents: OutOfSchoolEvent[];
     if (editingEvent) {
-      const updated = StorageService.updateEvent(editingEvent.id, data);
-      setEvents(updated);
+      updatedEvents = StorageService.updateEvent(editingEvent.id, eventData);
     } else {
-      StorageService.addEvent(data);
-      setEvents(StorageService.getEvents());
+      StorageService.addEvent(eventData);
+      updatedEvents = StorageService.getEvents();
     }
+    setEvents(updatedEvents);
+    broadcastAll(schedules, tasks, updatedEvents);
   };
 
-  // --- Bulk Add Handlers ---
+  const handleToggleEvent = (id: string) => {
+    const updated = StorageService.toggleEventCompleted(id);
+    setEvents(updated);
+    broadcastAll(schedules, tasks, updated);
+  };
+
+  const handleDeleteEvent = (id: string) => {
+    const updated = StorageService.deleteEvent(id);
+    setEvents(updated);
+    broadcastAll(schedules, tasks, updated);
+  };
+
+  const handleDeleteBulkEvents = (ids: string[]) => {
+    const updated = StorageService.deleteBulkEvents(ids);
+    setEvents(updated);
+    broadcastAll(schedules, tasks, updated);
+  };
+
+  // --- Bulk Handlers ---
   const handleOpenBulkAdd = (type: BulkType) => {
     setBulkAddType(type);
     setIsBulkAddOpen(true);
@@ -218,16 +314,19 @@ export function App() {
   const handleSaveBulkSchedules = (items: Array<Omit<SchoolSchedule, 'id' | 'createdAt'>>) => {
     const updated = StorageService.addBulkSchedules(items);
     setSchedules(updated);
+    broadcastAll(updated, tasks, events);
   };
 
   const handleSaveBulkTasks = (items: Array<Omit<TaskItem, 'id' | 'createdAt' | 'completed'>>) => {
     const updated = StorageService.addBulkTasks(items);
     setTasks(updated);
+    broadcastAll(schedules, updated, events);
   };
 
   const handleSaveBulkEvents = (items: Array<Omit<OutOfSchoolEvent, 'id' | 'createdAt' | 'completed'>>) => {
     const updated = StorageService.addBulkEvents(items);
     setEvents(updated);
+    broadcastAll(schedules, tasks, updated);
   };
 
   // --- Quick Add Dispatcher ---
@@ -244,18 +343,23 @@ export function App() {
   const pendingTasksCount = tasks.filter((t) => !t.completed).length;
 
   return (
-    <div className="min-h-screen bg-mono-50 text-mono-950 dark:bg-mono-950 dark:text-mono-50 transition-colors font-sans flex flex-col">
+    <div className="min-h-screen bg-mono-50 text-mono-950 dark:bg-mono-950 dark:text-mono-50 transition-colors duration-200 font-sans flex flex-col">
       
       {/* Top Header */}
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        darkMode={darkMode}
+        darkMode={appSettings.darkMode}
         onToggleDarkMode={handleToggleDarkMode}
         onOpenQuickAdd={() => setIsQuickAddOpen(true)}
-        onOpenMobileGuide={() => setIsMobileGuideOpen(true)}
         onOpenExportImport={() => setIsExportImportOpen(true)}
+        onOpenSync={() => setIsSyncModalOpen(true)}
         pendingTasksCount={pendingTasksCount}
+        settings={appSettings}
+        onUpdateSettings={handleUpdateSettings}
+        onTestNotification={handleTestNotification}
+        isOnline={syncStatus.isOnline}
+        isPaired={syncStatus.isPaired}
       />
 
       {/* Main Content Area */}
@@ -266,7 +370,9 @@ export function App() {
             tasks={tasks}
             events={events}
             onToggleTask={handleToggleTask}
+            onUpdateSubTasks={handleUpdateSubTasks}
             onDeleteTask={handleDeleteTask}
+            onOpenEditTask={handleOpenEditTask}
             onToggleEvent={handleToggleEvent}
             onDeleteEvent={handleDeleteEvent}
             onOpenAddTask={handleOpenAddTask}
@@ -294,6 +400,7 @@ export function App() {
             tasks={tasks}
             schedules={schedules}
             onToggleTask={handleToggleTask}
+            onUpdateSubTasks={handleUpdateSubTasks}
             onDeleteTask={handleDeleteTask}
             onDeleteBulkTasks={handleDeleteBulkTasks}
             onToggleBulkTasks={handleToggleBulkTasks}
@@ -337,7 +444,7 @@ export function App() {
         pendingTasksCount={pendingTasksCount}
       />
 
-      {/* Modals */}
+      {/* Modals with click-outside-to-close */}
       <TaskModal
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
@@ -387,13 +494,12 @@ export function App() {
         onDataChanged={refreshAllData}
       />
 
-      <MobileGuideModal
-        isOpen={isMobileGuideOpen}
-        onClose={() => setIsMobileGuideOpen(false)}
+      <SyncModal
+        isOpen={isSyncModalOpen}
+        onClose={() => setIsSyncModalOpen(false)}
       />
 
     </div>
   );
 }
-
 export default App;
