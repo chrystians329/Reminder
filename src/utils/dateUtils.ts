@@ -93,8 +93,8 @@ export function isDateToday(dateStr: string, baseDateStr: string = formatDateKey
 /**
  * Check if a task is overdue
  */
-export function isTaskOverdue(dueDate: string, dueTime?: string, completed: boolean = false): boolean {
-  if (completed) return false;
+export function isTaskOverdue(dueDate?: string, dueTime?: string, completed: boolean = false): boolean {
+  if (completed || !dueDate) return false;
   const todayStr = formatDateKey(new Date());
   if (dueDate < todayStr) return true;
   if (dueDate === todayStr && dueTime) {
@@ -126,3 +126,4 @@ export function getUpcomingDays(baseDateStr: string = formatDateKey(new Date()),
   }
   return list;
 }
+

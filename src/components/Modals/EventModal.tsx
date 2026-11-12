@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, Calendar, Clock, MapPin, AlignLeft, AlertCircle } from 'lucide-react';
+import { X } from 'lucide-react';
 import { OutOfSchoolEvent, PriorityTier } from '../../types';
 import { formatDateKey } from '../../utils/dateUtils';
 
@@ -68,19 +68,9 @@ export const EventModal: React.FC<EventModalProps> = ({
       >
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-3 border-b border-mono-100 dark:border-mono-800">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-black text-white dark:bg-white dark:text-black flex items-center justify-center font-bold">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="font-extrabold text-lg tracking-tight">
-                {editingEvent ? 'Edit Agenda Luar' : 'Tambah Agenda Luar Sekolah'}
-              </h2>
-              <p className="text-xs text-mono-500">
-                Aktivitas santai, les bimbel, nonton bioskop, atau kegiatan non-sekolah.
-              </p>
-            </div>
-          </div>
+          <h2 className="font-extrabold text-lg tracking-tight">
+            {editingEvent ? 'Edit Agenda' : 'Tambah Agenda'}
+          </h2>
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg text-mono-400 hover:text-black dark:hover:text-white hover:bg-mono-100 dark:hover:bg-mono-800"
@@ -109,9 +99,8 @@ export const EventModal: React.FC<EventModalProps> = ({
 
           {/* Tier Prioritas: Penting / Sedang / Tidak */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1.5 flex items-center gap-1.5">
-              <AlertCircle className="w-3.5 h-3.5" />
-              <span>Tingkat Kepentingan (Tier Prioritas) *</span>
+            <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1.5">
+              Tingkat Kepentingan (Tier Prioritas) *
             </label>
             <div className="grid grid-cols-3 gap-2">
               <button
@@ -158,9 +147,8 @@ export const EventModal: React.FC<EventModalProps> = ({
           {/* Tanggal & Waktu Acara */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5" />
-                <span>Tanggal Acara *</span>
+              <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1">
+                Tanggal Acara *
               </label>
               <input
                 type="date"
@@ -172,9 +160,8 @@ export const EventModal: React.FC<EventModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5" />
-                <span>Jam Acara</span>
+              <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1">
+                Jam Acara
               </label>
               <input
                 type="time"
@@ -187,24 +174,22 @@ export const EventModal: React.FC<EventModalProps> = ({
 
           {/* Lokasi */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1 flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5" />
-              <span>Lokasi / Tempat</span>
+            <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1">
+              Lokasi / Tempat
             </label>
             <input
               type="text"
               placeholder="Contoh: Mall Grand Indonesia XXI, Rumah Teman, GOR Futsal"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl bg-mono-50 dark:bg-mono-950 border border-mono-200 dark:border-mono-800 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-mono-50 dark:bg-mono-950 border border-mono-200 dark:border-mono-800 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
             />
           </div>
 
           {/* Catatan Tambahan */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1 flex items-center gap-1.5">
-              <AlignLeft className="w-3.5 h-3.5" />
-              <span>Catatan / Informasi Tambahan</span>
+            <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1">
+              Catatan / Informasi Tambahan
             </label>
             <textarea
               rows={2}

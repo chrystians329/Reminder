@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Smartphone, Check, Terminal, Globe } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface MobileGuideModalProps {
   isOpen: boolean;
@@ -20,18 +20,13 @@ export const MobileGuideModal: React.FC<MobileGuideModalProps> = ({
       >
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-mono-100 dark:border-mono-800">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-black text-white dark:bg-white dark:text-black flex items-center justify-center font-bold">
-              <Smartphone className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="font-extrabold text-lg tracking-tight">
-                Cara Menjadikan Aplikasi Mobile
-              </h2>
-              <p className="text-xs text-mono-500">
-                Web App ini sudah dirancang untuk dua jalur konversi mobile: PWA & Native APK Capacitor.
-              </p>
-            </div>
+          <div>
+            <h2 className="font-extrabold text-lg tracking-tight">
+              Cara Menjadikan Aplikasi Mobile
+            </h2>
+            <p className="text-xs text-mono-500">
+              Web App ini dirancang untuk dua jalur konversi: PWA ~ Native APK Capacitor.
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -44,32 +39,28 @@ export const MobileGuideModal: React.FC<MobileGuideModalProps> = ({
         {/* Content Body */}
         <div className="space-y-5 text-xs sm:text-sm">
           
-          {/* Method 1: PWA (Install ke HP tanpa build APK) */}
+          {/* Method 1: PWA */}
           <div className="p-4 rounded-2xl bg-mono-50 dark:bg-mono-950 border border-mono-200 dark:border-mono-800 space-y-2.5">
-            <div className="flex items-center gap-2 font-black text-sm">
-              <Globe className="w-4 h-4" />
-              <span>Metode 1: PWA (Langsung Pasang di HP Android & iPhone)</span>
+            <div className="font-black text-sm">
+              Metode 1: PWA (Langsung Pasang di HP Android & iPhone)
             </div>
             <p className="text-mono-600 dark:text-mono-400 text-xs">
               Aplikasi ini sudah mendukung Progressive Web App. Tampilan langsung menyesuaikan layar HP dengan navigasi bawah dan berjalan fullscreen tanpa bar browser.
             </p>
             <div className="space-y-1.5 text-xs text-mono-700 dark:text-mono-300">
-              <div className="flex items-start gap-2">
-                <Check className="w-3.5 h-3.5 mt-0.5 text-mono-900 dark:text-mono-100 shrink-0" />
-                <span><strong>Android (Chrome):</strong> Buka browser di HP &gt; Tekan Menu titik tiga (⋮) &gt; Pilih <strong>"Tambahkan ke Layar Utama"</strong> atau <strong>"Install Aplikasi"</strong>.</span>
+              <div>
+                <strong>Android (Chrome):</strong> Buka browser di HP &gt; Tekan Menu titik tiga (⋮) &gt; Pilih <strong>"Tambahkan ke Layar Utama"</strong> atau <strong>"Install Aplikasi"</strong>.
               </div>
-              <div className="flex items-start gap-2">
-                <Check className="w-3.5 h-3.5 mt-0.5 text-mono-900 dark:text-mono-100 shrink-0" />
-                <span><strong>iPhone (Safari):</strong> Buka di Safari &gt; Tekan tombol <strong>Share</strong> (ikon kotak panah ke atas) &gt; Pilih <strong>"Add to Home Screen"</strong>.</span>
+              <div>
+                <strong>iPhone (Safari):</strong> Buka di Safari &gt; Tekan tombol <strong>Share</strong> (ikon kotak panah ke atas) &gt; Pilih <strong>"Add to Home Screen"</strong>.
               </div>
             </div>
           </div>
 
-          {/* Method 2: Capacitor (Build Jadi File .APK Android) */}
+          {/* Method 2: Capacitor */}
           <div className="p-4 rounded-2xl bg-mono-50 dark:bg-mono-950 border border-mono-200 dark:border-mono-800 space-y-2.5">
-            <div className="flex items-center gap-2 font-black text-sm">
-              <Terminal className="w-4 h-4" />
-              <span>Metode 2: Capacitor (Build Native APK Android)</span>
+            <div className="font-black text-sm">
+              Metode 2: Capacitor (Build Native APK Android)
             </div>
             <p className="text-mono-600 dark:text-mono-400 text-xs">
               Project ini sudah terkonfigurasi dengan Capacitor (<code>capacitor.config.ts</code>). Kamu bisa langsung menjadikannya APK native Android dengan 4 perintah berikut:
@@ -85,7 +76,7 @@ export const MobileGuideModal: React.FC<MobileGuideModalProps> = ({
               <p className="text-white font-bold">npx cap open android</p>
             </div>
             <p className="text-[11px] text-mono-500">
-              * Di Android Studio, klik menu <strong>Build &gt; Build Bundle(s) / APK(s) &gt; Build APK(s)</strong> untuk langsung mendapatkan file <code>.apk</code> yang dapat diinstal di semua smartphone Android.
+              * Di Android Studio, klik menu <strong>Build &gt; Build Bundle(s) / APK(s) &gt; Build APK(s)</strong> untuk langsung mendapatkan file <code>.apk</code> yang dapat diinstal di smartphone Android.
             </p>
           </div>
 

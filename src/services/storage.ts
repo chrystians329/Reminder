@@ -74,6 +74,25 @@ export const StorageService = {
     return schedules;
   },
 
+  addBulkSchedules(items: Array<Omit<SchoolSchedule, 'id' | 'createdAt'>>): SchoolSchedule[] {
+    const schedules = this.getSchedules();
+    const newItems: SchoolSchedule[] = items.map(item => ({
+      ...item,
+      id: 'sch-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+      createdAt: new Date().toISOString()
+    }));
+    const combined = [...schedules, ...newItems];
+    this.saveSchedules(combined);
+    return combined;
+  },
+
+  deleteBulkSchedules(ids: string[]): SchoolSchedule[] {
+    const idSet = new Set(ids);
+    const schedules = this.getSchedules().filter(item => !idSet.has(item.id));
+    this.saveSchedules(schedules);
+    return schedules;
+  },
+
   // --- Tasks (Tugas / PR) ---
   getTasks(): TaskItem[] {
     try {
@@ -129,15 +148,56 @@ export const StorageService = {
     return tasks;
   },
 
+  addBulkTasks(items: Array<Omit<TaskItem, 'id' | 'createdAt' | 'completed'>>): TaskItem[] {
+    const tasks = this.getTasks();
+    const newItems: TaskItem[] = items.map(item => ({
+      ...item,
+      id: 'tsk-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+      completed: false,
+      createdAt: new Date().toISOString()
+    }));
+    const combined = [...tasks, ...newItems];
+    this.saveTasks(combined);
+    return combined;
+  },
+
+  deleteBulkTasks(ids: string[]): TaskItem[] {
+    const idSet = new Set(ids);
+    const tasks = this.getTasks().filter(item => !idSet.has(item.id));
+    this.saveTasks(tasks);
+    return tasks;
+  },
+
+  toggleBulkTasks(ids: string[], completed: boolean): TaskItem[] {
+    const idSet = new Set(ids);
+    const nowIso = new Date().toISOString();
+    const tasks = this.getTasks().map(item => {
+      if (idSet.has(item.id)) {
+        return {
+          ...item,
+          completed,
+          completedAt: completed ? nowIso : undefined
+        };
+      }
+      return item;
+    });
+    this.saveTasks(tasks);
+    return tasks;
+  },
+
   // Clear or purge tasks that are completed or overdue (user requirement #3)
   purgeCompletedOrExpiredTasks(): TaskItem[] {
     const tasks = this.getTasks().filter(item => {
       if (item.completed) return false;
-      if (isTaskOverdue(item.dueDate, item.dueTime, item.completed)) return false;
+      if (item.dueDate && isTaskOverdue(item.dueDate, item.dueTime, item.completed)) return false;
       return true;
     });
     this.saveTasks(tasks);
     return tasks;
+  },
+
+  updateTaskSubTasks(taskId: string, subTasks: import('../types').SubTaskItem[]): TaskItem[] {
+    return this.updateTask(taskId, { subTasks });
   },
 
   // --- Events (Kegiatan Luar Sekolah) ---
@@ -181,6 +241,26 @@ export const StorageService = {
 
   deleteEvent(id: string): OutOfSchoolEvent[] {
     const events = this.getEvents().filter(item => item.id !== id);
+    this.saveEvents(events);
+    return events;
+  },
+
+  addBulkEvents(items: Array<Omit<OutOfSchoolEvent, 'id' | 'createdAt' | 'completed'>>): OutOfSchoolEvent[] {
+    const events = this.getEvents();
+    const newItems: OutOfSchoolEvent[] = items.map(item => ({
+      ...item,
+      id: 'evt-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+      completed: false,
+      createdAt: new Date().toISOString()
+    }));
+    const combined = [...events, ...newItems];
+    this.saveEvents(combined);
+    return combined;
+  },
+
+  deleteBulkEvents(ids: string[]): OutOfSchoolEvent[] {
+    const idSet = new Set(ids);
+    const events = this.getEvents().filter(item => !idSet.has(item.id));
     this.saveEvents(events);
     return events;
   },
@@ -260,3 +340,4 @@ export const StorageService = {
     this.saveSettings(DEFAULT_SETTINGS);
   }
 };
+

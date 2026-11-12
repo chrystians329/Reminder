@@ -1,15 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Sun, 
   Moon, 
-  Plus, 
-  Smartphone, 
-  DownloadCloud, 
-  CalendarDays, 
-  BookOpen, 
-  CheckSquare, 
-  Sparkles, 
-  Clock
+  DownloadCloud,
+  Menu,
+  X
 } from 'lucide-react';
 import { ActiveTab } from '../types';
 
@@ -19,7 +14,6 @@ interface HeaderProps {
   darkMode: boolean;
   onToggleDarkMode: () => void;
   onOpenQuickAdd: () => void;
-  onOpenMobileGuide: () => void;
   onOpenExportImport: () => void;
   pendingTasksCount: number;
 }
@@ -30,16 +24,17 @@ export const Header: React.FC<HeaderProps> = ({
   darkMode,
   onToggleDarkMode,
   onOpenQuickAdd,
-  onOpenMobileGuide,
   onOpenExportImport,
   pendingTasksCount
 }) => {
-  const navItems: { id: ActiveTab; label: string; icon: React.ReactNode; badge?: number }[] = [
-    { id: 'dashboard', label: 'Hari Ini', icon: <Clock className="w-4 h-4" /> },
-    { id: 'schedule', label: 'Jadwal Pelajaran', icon: <BookOpen className="w-4 h-4" /> },
-    { id: 'tasks', label: 'Tugas & PR', icon: <CheckSquare className="w-4 h-4" />, badge: pendingTasksCount },
-    { id: 'events', label: 'Agenda Luar', icon: <Sparkles className="w-4 h-4" /> },
-    { id: 'calendar', label: 'Kalender', icon: <CalendarDays className="w-4 h-4" /> },
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const navItems: { id: ActiveTab; label: string; badge?: number }[] = [
+    { id: 'dashboard', label: 'Hari Ini' },
+    { id: 'schedule', label: 'Jadwal' },
+    { id: 'tasks', label: 'Tugas & PR', badge: pendingTasksCount },
+    { id: 'events', label: 'Agenda Luar' },
+    { id: 'calendar', label: 'Kalender' },
   ];
 
   return (
@@ -51,17 +46,12 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={() => setActiveTab('dashboard')} 
           className="flex items-center gap-2.5 cursor-pointer select-none group"
         >
-          <div className="w-9 h-9 bg-black dark:bg-white text-white dark:text-black rounded-lg flex items-center justify-center font-black tracking-tighter text-lg shadow-sm border border-mono-900 dark:border-mono-100">
+          <div className="w-8 h-8 bg-black dark:bg-white text-white dark:text-black rounded-lg flex items-center justify-center font-black tracking-tighter text-base shadow-sm border border-mono-900 dark:border-mono-100">
             R
           </div>
-          <div>
-            <span className="font-extrabold tracking-tight text-base sm:text-lg block leading-none">
-              REMINDER
-            </span>
-            <span className="text-[10px] tracking-widest uppercase font-mono text-mono-500 dark:text-mono-400">
-              Pelajar
-            </span>
-          </div>
+          <span className="font-extrabold text-base tracking-tight">
+            REMINDER
+          </span>
         </div>
 
         {/* Desktop Navigation Links */}
@@ -72,13 +62,12 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`relative px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all flex items-center gap-2 ${
+                className={`relative px-3.5 py-1.5 rounded-lg text-xs font-bold tracking-wide transition-all flex items-center gap-1.5 ${
                   isActive
                     ? 'bg-mono-900 text-white dark:bg-mono-100 dark:text-mono-950 shadow-sm'
                     : 'text-mono-600 dark:text-mono-300 hover:text-mono-950 dark:hover:text-white hover:bg-mono-100 dark:hover:bg-mono-900'
                 }`}
               >
-                {item.icon}
                 <span>{item.label}</span>
                 {item.badge !== undefined && item.badge > 0 && (
                   <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
@@ -94,44 +83,109 @@ export const Header: React.FC<HeaderProps> = ({
           })}
         </nav>
 
-        {/* Right Action Icons */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* Right Action Buttons */}
+        <div className="relative flex items-center gap-2">
           {/* Quick Add Button */}
           <button
             onClick={onOpenQuickAdd}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all text-xs font-bold shadow-sm"
-            title="Tambah Cepat"
+            className="px-3.5 py-1.5 rounded-lg bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all text-xs font-bold shadow-sm"
           >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span className="hidden sm:inline">Tambah</span>
+            + Tambah
           </button>
 
-          {/* Mobile App Guide */}
+          {/* Hamburger Menu Toggle Button */}
           <button
-            onClick={onOpenMobileGuide}
-            className="p-2 rounded-lg text-mono-700 dark:text-mono-300 hover:bg-mono-100 dark:hover:bg-mono-900 transition-colors"
-            title="Jadikan Aplikasi Mobile (APK / PWA)"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="p-2 rounded-lg text-mono-700 dark:text-mono-300 hover:bg-mono-100 dark:hover:bg-mono-900 transition-colors border border-transparent hover:border-mono-200 dark:hover:border-mono-800"
+            aria-label="Menu"
           >
-            <Smartphone className="w-4 h-4" />
+            {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
 
-          {/* Backup / Export / Import */}
-          <button
-            onClick={onOpenExportImport}
-            className="p-2 rounded-lg text-mono-700 dark:text-mono-300 hover:bg-mono-100 dark:hover:bg-mono-900 transition-colors"
-            title="Backup & Ekspor / Impor Data"
-          >
-            <DownloadCloud className="w-4 h-4" />
-          </button>
+          {/* Hamburger Dropdown Menu */}
+          {isMenuOpen && (
+            <>
+              {/* Overlay for outside click */}
+              <div 
+                className="fixed inset-0 z-40" 
+                onClick={() => setIsMenuOpen(false)} 
+              />
 
-          {/* Dark / Light Toggle */}
-          <button
-            onClick={onToggleDarkMode}
-            className="p-2 rounded-lg text-mono-700 dark:text-mono-300 hover:bg-mono-100 dark:hover:bg-mono-900 transition-colors"
-            title={darkMode ? "Ganti ke Tema Terang" : "Ganti ke Tema Gelap"}
-          >
-            {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
+              <div className="absolute right-0 top-12 w-64 bg-white dark:bg-mono-900 border border-mono-200 dark:border-mono-800 rounded-2xl shadow-2xl p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                {/* Dark / Light Toggle Switch */}
+                <div className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-mono-100 dark:hover:bg-mono-800/60 transition-colors">
+                  <div className="flex items-center gap-2 text-xs font-bold text-mono-800 dark:text-mono-200">
+                    {darkMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                    <span>Mode Gelap</span>
+                  </div>
+
+                  {/* Toggle Switch */}
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={darkMode}
+                    onClick={onToggleDarkMode}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      darkMode ? 'bg-black dark:bg-white' : 'bg-mono-300 dark:bg-mono-700'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white dark:bg-black shadow-lg ring-0 transition duration-200 ease-in-out ${
+                        darkMode ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                <div className="my-1 border-t border-mono-100 dark:border-mono-800" />
+
+                {/* Backup & Export/Import Button */}
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onOpenExportImport();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-mono-700 dark:text-mono-300 hover:text-black dark:hover:text-white hover:bg-mono-100 dark:hover:bg-mono-800/60 transition-colors text-left"
+                >
+                  <DownloadCloud className="w-4 h-4" />
+                  <span>Backup & Ekspor / Impor</span>
+                </button>
+
+                {/* Mobile Navigation inside Menu */}
+                <div className="md:hidden mt-1 pt-1.5 border-t border-mono-100 dark:border-mono-800 space-y-0.5">
+                  <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-mono-400">
+                    Menu
+                  </div>
+                  {navItems.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveTab(item.id);
+                        setIsMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-colors ${
+                        activeTab === item.id
+                          ? 'bg-black text-white dark:bg-white dark:text-black'
+                          : 'text-mono-600 dark:text-mono-400 hover:bg-mono-100 dark:hover:bg-mono-800'
+                      }`}
+                    >
+                      <span>{item.label}</span>
+                      {item.badge !== undefined && item.badge > 0 && (
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                          activeTab === item.id 
+                            ? 'bg-white text-black dark:bg-black dark:text-white' 
+                            : 'bg-mono-200 dark:bg-mono-800'
+                        }`}>
+                          {item.badge}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+              </div>
+            </>
+          )}
         </div>
 
       </div>

@@ -221,29 +221,65 @@ export const DEFAULT_TASKS: TaskItem[] = [
   {
     id: 'tsk-1',
     title: 'PR Matematika: Latihan Halaman 54',
-    description: 'Kerjakan nomor 1 s/d 10 di buku tugas berpetak beserta langkah penyelesaiannya.',
+    description: 'Kerjakan di buku tugas berpetak beserta langkah penyelesaiannya.',
     scheduleId: 'sch-sen-2',
     subjectName: 'Matematika Wajib',
     dueDate: today,
     dueTime: '21:00',
     completed: false,
+    subTasks: [
+      {
+        id: 'sub-1',
+        title: 'Soal Nomor 1 - 5 (Turunan Fungsi)',
+        completed: true,
+        subTasks: [
+          { id: 'sub-1-1', title: 'Periksa kembali rumus turunan pecahan', completed: true }
+        ]
+      },
+      {
+        id: 'sub-2',
+        title: 'Soal Nomor 6 - 10 (Aplikasi Turunan)',
+        completed: false,
+        subTasks: [
+          { id: 'sub-2-1', title: 'Gambar grafik garis singgung kurva', completed: false },
+          { id: 'sub-2-2', title: 'Tuliskan kesimpulan titik stasioner', completed: false }
+        ]
+      }
+    ],
     createdAt: new Date().toISOString()
   },
   {
     id: 'tsk-2',
+    title: 'Tugas Proyek Matematika (Tanpa Deadline)',
+    description: 'Rangkuman rumus turunan dan integral untuk ujian semester.',
+    scheduleId: 'sch-sen-2',
+    subjectName: 'Matematika Wajib',
+    completed: false,
+    subTasks: [
+      { id: 'sub-2-a', title: 'Kumpulkan contoh soal SBMPTN / SNBT', completed: false },
+      { id: 'sub-2-b', title: 'Buat mind map rumus di kertas karton', completed: false }
+    ],
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'tsk-3',
     title: 'Kliping Sejarah Nasional',
-    description: 'Kumpulkan artikel berita tentang peristiwa bersejarah dan buat rangkumannya.',
+    description: 'Kumpulkan artikel berita tentang peristiwa bersejarah.',
     scheduleId: 'sch-rab-3',
     subjectName: 'Sejarah Indonesia',
     dueDate: tomorrow,
     dueTime: '18:00',
     completed: false,
+    subTasks: [
+      { id: 'sub-3-1', title: 'Cari 3 artikel surat kabar tempo dulu', completed: true },
+      { id: 'sub-3-2', title: 'Cetak dan tempel pada binder folio', completed: false }
+    ],
     createdAt: new Date().toISOString()
   },
   {
-    id: 'tsk-3',
+    id: 'tsk-4',
     title: 'Laporan Praktikum Fisika',
-    description: 'Tuliskan hasil pengukuran osilasi pegas dan kesimpulan grafik.',
+    description: 'Tuliskan hasil pengukuran osilasi pegas dan grafik.',
     scheduleId: 'sch-sel-1',
     subjectName: 'Fisika',
     dueDate: dayAfter,
@@ -288,3 +324,4 @@ export const DEFAULT_EVENTS: OutOfSchoolEvent[] = [
     createdAt: new Date().toISOString()
   }
 ];
+

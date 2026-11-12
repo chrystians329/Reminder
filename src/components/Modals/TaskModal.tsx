@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckSquare, Calendar, Clock, BookOpen, AlignLeft } from 'lucide-react';
+import { X } from 'lucide-react';
 import { TaskItem, SchoolSchedule } from '../../types';
-import { formatDateKey } from '../../utils/dateUtils';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -36,14 +35,14 @@ export const TaskModal: React.FC<TaskModalProps> = ({
       setTitle(editingTask.title);
       setDescription(editingTask.description || '');
       setSubjectName(editingTask.subjectName || '');
-      setDueDate(editingTask.dueDate);
+      setDueDate(editingTask.dueDate || '');
       setDueTime(editingTask.dueTime || '');
     } else {
       setTitle('');
       setDescription('');
       setSubjectName(initialSubject || (availableSubjects[0] || ''));
-      setDueDate(initialDate || formatDateKey(new Date()));
-      setDueTime('21:00');
+      setDueDate(initialDate || '');
+      setDueTime('');
     }
   }, [editingTask, initialSubject, initialDate, isOpen]);
 
@@ -51,14 +50,15 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !dueDate) return;
+    if (!title.trim()) return;
 
     onSave({
       title: title.trim(),
       description: description.trim() || undefined,
       subjectName: subjectName.trim() || undefined,
-      dueDate,
-      dueTime: dueTime || undefined
+      dueDate: dueDate || undefined,
+      dueTime: (dueDate && dueTime) ? dueTime : undefined,
+      subTasks: editingTask?.subTasks
     });
     onClose();
   };
@@ -71,19 +71,9 @@ export const TaskModal: React.FC<TaskModalProps> = ({
       >
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-3 border-b border-mono-100 dark:border-mono-800">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-black text-white dark:bg-white dark:text-black flex items-center justify-center font-bold">
-              <CheckSquare className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="font-extrabold text-lg tracking-tight">
-                {editingTask ? 'Edit Tugas & PR' : 'Tambah Tugas Baru'}
-              </h2>
-              <p className="text-xs text-mono-500">
-                Hubungkan tugas dengan mata pelajaran dan tenggat waktu.
-              </p>
-            </div>
-          </div>
+          <h2 className="font-extrabold text-lg tracking-tight">
+            {editingTask ? 'Edit Tugas' : 'Tambah Tugas'}
+          </h2>
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg text-mono-400 hover:text-black dark:hover:text-white hover:bg-mono-100 dark:hover:bg-mono-800"
@@ -98,12 +88,12 @@ export const TaskModal: React.FC<TaskModalProps> = ({
           {/* Judul Tugas */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1">
-              Judul Tugas / PR <span className="text-mono-400">*</span>
+              Judul Tugas / PR *
             </label>
             <input
               type="text"
               required
-              placeholder="Contoh: PR Matematika Halaman 45 no 1-10"
+              placeholder="Contoh: PR Matematika Halaman 45"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl bg-mono-50 dark:bg-mono-950 border border-mono-200 dark:border-mono-800 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
@@ -112,9 +102,8 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
           {/* Hubungkan dengan Jadwal / Mapel */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1 flex items-center gap-1.5">
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>Mata Pelajaran Terkait</span>
+            <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1">
+              Mata Pelajaran (Opsional)
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <select
@@ -141,42 +130,50 @@ export const TaskModal: React.FC<TaskModalProps> = ({
           {/* Tanggal & Waktu Deadline */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5" />
-                <span>Tanggal Deadline *</span>
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300">
+                  Tanggal (Opsional)
+                </label>
+                {dueDate && (
+                  <button
+                    type="button"
+                    onClick={() => setDueDate('')}
+                    className="text-[10px] font-semibold text-mono-400 hover:text-black dark:hover:text-white"
+                  >
+                    Kosongkan
+                  </button>
+                )}
+              </div>
               <input
                 type="date"
-                required
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-mono-50 dark:bg-mono-950 border border-mono-200 dark:border-mono-800 text-xs font-mono font-semibold focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
+                className="w-full px-3 py-2 rounded-xl bg-mono-50 dark:bg-mono-950 border border-mono-200 dark:border-mono-800 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5" />
-                <span>Jam Deadline</span>
+              <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1">
+                Jam (Opsional)
               </label>
               <input
                 type="time"
                 value={dueTime}
                 onChange={(e) => setDueTime(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-mono-50 dark:bg-mono-950 border border-mono-200 dark:border-mono-800 text-xs font-mono font-semibold focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
+                disabled={!dueDate}
+                className="w-full px-3 py-2 rounded-xl bg-mono-50 dark:bg-mono-950 border border-mono-200 dark:border-mono-800 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white disabled:opacity-50"
               />
             </div>
           </div>
 
           {/* Detail / Catatan PR */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1 flex items-center gap-1.5">
-              <AlignLeft className="w-3.5 h-3.5" />
-              <span>Detail & Catatan (Opsional)</span>
+            <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1">
+              Catatan (Opsional)
             </label>
             <textarea
-              rows={3}
-              placeholder="Contoh: Kerjakan di buku berpetak, dikumpulkan di meja ketua kelas sebelum jam istirahat..."
+              rows={2}
+              placeholder="Tambahkan catatan jika ada..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full p-3 rounded-xl bg-mono-50 dark:bg-mono-950 border border-mono-200 dark:border-mono-800 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white resize-none"
@@ -196,7 +193,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
               type="submit"
               className="px-5 py-2 rounded-xl bg-black text-white dark:bg-white dark:text-black text-xs font-bold hover:opacity-90 active:scale-95 transition-all"
             >
-              Simpan Tugas
+              Simpan
             </button>
           </div>
         </form>

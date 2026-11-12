@@ -17,6 +17,7 @@ import { CalendarView } from './components/CalendarView';
 import { TaskModal } from './components/Modals/TaskModal';
 import { ScheduleModal } from './components/Modals/ScheduleModal';
 import { EventModal } from './components/Modals/EventModal';
+import { BulkAddModal, BulkType } from './components/Modals/BulkAddModal';
 import { QuickAddModal } from './components/QuickAddModal';
 import { ExportImportModal } from './components/Modals/ExportImportModal';
 import { MobileGuideModal } from './components/Modals/MobileGuideModal';
@@ -41,6 +42,9 @@ export function App() {
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<OutOfSchoolEvent | null>(null);
   const [eventModalDefaultDate, setEventModalDefaultDate] = useState<string | undefined>();
+
+  const [isBulkAddOpen, setIsBulkAddOpen] = useState(false);
+  const [bulkAddType, setBulkAddType] = useState<BulkType>('task');
 
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [isExportImportOpen, setIsExportImportOpen] = useState(false);
@@ -95,6 +99,16 @@ export function App() {
     setTasks(updated);
   };
 
+  const handleDeleteBulkTasks = (ids: string[]) => {
+    const updated = StorageService.deleteBulkTasks(ids);
+    setTasks(updated);
+  };
+
+  const handleToggleBulkTasks = (ids: string[], completed: boolean) => {
+    const updated = StorageService.toggleBulkTasks(ids, completed);
+    setTasks(updated);
+  };
+
   const handleOpenAddTask = (subjectName?: string, defaultDate?: string) => {
     setEditingTask(null);
     setTaskModalInitialSubject(subjectName);
@@ -142,6 +156,11 @@ export function App() {
     setSchedules(updated);
   };
 
+  const handleDeleteBulkSchedules = (ids: string[]) => {
+    const updated = StorageService.deleteBulkSchedules(ids);
+    setSchedules(updated);
+  };
+
   const handleSaveSchedule = (data: Omit<SchoolSchedule, 'id' | 'createdAt'>) => {
     if (editingSchedule) {
       const updated = StorageService.updateSchedule(editingSchedule.id, data);
@@ -160,6 +179,11 @@ export function App() {
 
   const handleDeleteEvent = (id: string) => {
     const updated = StorageService.deleteEvent(id);
+    setEvents(updated);
+  };
+
+  const handleDeleteBulkEvents = (ids: string[]) => {
+    const updated = StorageService.deleteBulkEvents(ids);
     setEvents(updated);
   };
 
@@ -185,11 +209,36 @@ export function App() {
     }
   };
 
+  // --- Bulk Add Handlers ---
+  const handleOpenBulkAdd = (type: BulkType) => {
+    setBulkAddType(type);
+    setIsBulkAddOpen(true);
+  };
+
+  const handleSaveBulkSchedules = (items: Array<Omit<SchoolSchedule, 'id' | 'createdAt'>>) => {
+    const updated = StorageService.addBulkSchedules(items);
+    setSchedules(updated);
+  };
+
+  const handleSaveBulkTasks = (items: Array<Omit<TaskItem, 'id' | 'createdAt' | 'completed'>>) => {
+    const updated = StorageService.addBulkTasks(items);
+    setTasks(updated);
+  };
+
+  const handleSaveBulkEvents = (items: Array<Omit<OutOfSchoolEvent, 'id' | 'createdAt' | 'completed'>>) => {
+    const updated = StorageService.addBulkEvents(items);
+    setEvents(updated);
+  };
+
   // --- Quick Add Dispatcher ---
   const handleSelectQuickAdd = (type: 'task' | 'schedule' | 'event') => {
     if (type === 'task') handleOpenAddTask();
     if (type === 'schedule') handleOpenAddSchedule();
     if (type === 'event') handleOpenAddEvent();
+  };
+
+  const handleSelectBulkQuickAdd = (type: 'task' | 'schedule' | 'event') => {
+    handleOpenBulkAdd(type);
   };
 
   const pendingTasksCount = tasks.filter((t) => !t.completed).length;
@@ -223,6 +272,7 @@ export function App() {
             onOpenAddTask={handleOpenAddTask}
             onOpenAddSchedule={handleOpenAddSchedule}
             onOpenAddEvent={handleOpenAddEvent}
+            onOpenBulkAdd={handleOpenBulkAdd}
             onNavigateToTab={(tab) => setActiveTab(tab)}
           />
         )}
@@ -231,8 +281,10 @@ export function App() {
           <ScheduleView
             schedules={schedules}
             onOpenAddSchedule={handleOpenAddSchedule}
+            onOpenBulkAddSchedule={() => handleOpenBulkAdd('schedule')}
             onOpenEditSchedule={handleOpenEditSchedule}
             onDeleteSchedule={handleDeleteSchedule}
+            onDeleteBulkSchedules={handleDeleteBulkSchedules}
             onOpenAddTaskForSubject={(subj) => handleOpenAddTask(subj)}
           />
         )}
@@ -243,7 +295,10 @@ export function App() {
             schedules={schedules}
             onToggleTask={handleToggleTask}
             onDeleteTask={handleDeleteTask}
+            onDeleteBulkTasks={handleDeleteBulkTasks}
+            onToggleBulkTasks={handleToggleBulkTasks}
             onOpenAddTask={handleOpenAddTask}
+            onOpenBulkAddTask={() => handleOpenBulkAdd('task')}
             onOpenEditTask={handleOpenEditTask}
             onPurgeCompletedOrExpired={handlePurgeCompletedOrExpired}
           />
@@ -254,7 +309,9 @@ export function App() {
             events={events}
             onToggleEvent={handleToggleEvent}
             onDeleteEvent={handleDeleteEvent}
+            onDeleteBulkEvents={handleDeleteBulkEvents}
             onOpenAddEvent={handleOpenAddEvent}
+            onOpenBulkAddEvent={() => handleOpenBulkAdd('event')}
             onOpenEditEvent={handleOpenEditEvent}
           />
         )}
@@ -307,10 +364,21 @@ export function App() {
         defaultDate={eventModalDefaultDate}
       />
 
+      <BulkAddModal
+        isOpen={isBulkAddOpen}
+        type={bulkAddType}
+        onClose={() => setIsBulkAddOpen(false)}
+        onSaveSchedules={handleSaveBulkSchedules}
+        onSaveTasks={handleSaveBulkTasks}
+        onSaveEvents={handleSaveBulkEvents}
+        schedules={schedules}
+      />
+
       <QuickAddModal
         isOpen={isQuickAddOpen}
         onClose={() => setIsQuickAddOpen(false)}
         onSelectOption={handleSelectQuickAdd}
+        onSelectBulkOption={handleSelectBulkQuickAdd}
       />
 
       <ExportImportModal

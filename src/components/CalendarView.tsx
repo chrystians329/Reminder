@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
 import { 
-  CalendarDays, 
   ChevronLeft, 
-  ChevronRight, 
-  BookOpen, 
-  CheckSquare, 
-  Sparkles
+  ChevronRight
 } from 'lucide-react';
 import { SchoolSchedule, TaskItem, OutOfSchoolEvent, DayOfWeek } from '../types';
 import { 
@@ -64,13 +60,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   // Generate calendar days
-  // First day of month
   const firstDayOfMonth = new Date(year, month, 1);
-  const startingDayIndex = firstDayOfMonth.getDay(); // 0 is Sunday, 1 is Monday ...
-  // Total days in month
+  const startingDayIndex = firstDayOfMonth.getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  // Create grid cells
   const calendarCells: { dateStr: string; dayNum: number; isCurrentMonth: boolean }[] = [];
 
   // Previous month trailing days
@@ -95,7 +88,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     });
   }
 
-  // Next month leading days to complete 35 or 42 grid
+  // Next month leading days
   const remainingCells = (7 - (calendarCells.length % 7)) % 7;
   for (let d = 1; d <= remainingCells; d++) {
     const dateObj = new Date(year, month + 1, d);
@@ -131,15 +124,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       <div className="bg-white dark:bg-mono-900 border border-mono-200 dark:border-mono-800 rounded-2xl p-5 sm:p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-xs font-mono font-bold tracking-wider uppercase text-mono-500">
-              <CalendarDays className="w-3.5 h-3.5" />
-              <span>KALENDER & PERENCANAAN FLEKSIBEL</span>
+            <div className="text-xs font-mono font-bold tracking-wider uppercase text-mono-500">
+              KALENDER & PERENCANAAN FLEKSIBEL
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1">
               Kalender Pelajar
             </h1>
             <p className="text-xs sm:text-sm text-mono-600 dark:text-mono-400 mt-1">
-              Lihat jadwal dan rencana hari ini, besok, lusa, minggu depan, hingga bulan depan.
+              Lihat jadwal dan rencana hari ini ~ besok ~ lusa ~ minggu depan ~ hingga bulan depan.
             </p>
           </div>
 
@@ -237,7 +229,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               const isSelected = cell.dateStr === selectedDate;
               const isToday = cell.dateStr === todayKey;
 
-              // Cell dots calculation
               const cellDayName = getDayName(cell.dateStr);
               const cellIsSchool = isSchoolDay(cellDayName);
               const cellTasks = tasks.filter(t => t.dueDate === cell.dateStr);
@@ -309,20 +300,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             })}
           </div>
 
-          {/* Legend */}
-          <div className="flex flex-wrap items-center gap-4 pt-3 border-t border-mono-200 dark:border-mono-800 text-[11px] text-mono-500 font-mono">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-mono-400" />
-              <span>SCH: Hari Sekolah (Senin-Sabtu)</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-black dark:bg-white" />
-              <span>T: Tugas / PR</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 border border-black dark:border-white rounded-full" />
-              <span>A: Agenda Luar Sekolah</span>
-            </span>
+          {/* Legend with ~ */}
+          <div className="pt-3 border-t border-mono-200 dark:border-mono-800 text-[11px] text-mono-500 font-mono">
+            <span>SCH: Hari Sekolah</span>
+            <span className="mx-2">~</span>
+            <span>T: Tugas</span>
+            <span className="mx-2">~</span>
+            <span>A: Agenda Luar</span>
           </div>
         </div>
 
@@ -332,9 +316,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             
             {/* Header of Selected Date */}
             <div>
-              <span className="text-[10px] font-mono font-bold tracking-wider uppercase text-mono-500">
+              <div className="text-[10px] font-mono font-bold tracking-wider uppercase text-mono-500">
                 AGENDA TANGGAL TERPILIH
-              </span>
+              </div>
               <h2 className="text-xl font-extrabold tracking-tight mt-0.5">
                 {formatFullIndonesianDate(selectedDate)}
               </h2>
@@ -359,10 +343,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             {/* 1. School Schedule */}
             <div className="space-y-2 pt-2 border-t border-mono-200 dark:border-mono-800">
               <div className="flex items-center justify-between text-xs font-extrabold">
-                <div className="flex items-center gap-2">
-                  <BookOpen className="w-3.5 h-3.5" />
-                  <span>Pelajaran ({selectedDayName})</span>
-                </div>
+                <span>Pelajaran ({selectedDayName})</span>
                 {isSchool && (
                   <button
                     onClick={() => onOpenAddSchedule(selectedDayName as DayOfWeek)}
@@ -379,15 +360,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 <p className="text-xs text-mono-500">Belum ada mata pelajaran untuk hari {selectedDayName}.</p>
               ) : (
                 <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                  {selectedDaySchedules.map((sch) => (
-                    <div key={sch.id} className="p-2.5 rounded-xl bg-mono-50 dark:bg-mono-950 border border-mono-200 dark:border-mono-800 text-xs">
-                      <div className="flex items-center justify-between font-bold">
-                        <span>{sch.subject}</span>
-                        <span className="font-mono text-[11px] text-mono-500">{sch.startTime} - {sch.endTime}</span>
+                  {selectedDaySchedules.map((sch) => {
+                    const schMeta = [sch.startTime + ' - ' + sch.endTime, sch.room, sch.teacher].filter(Boolean).join(' ~ ');
+                    return (
+                      <div key={sch.id} className="p-2.5 rounded-xl bg-mono-50 dark:bg-mono-950 border border-mono-200 dark:border-mono-800 text-xs">
+                        <div className="flex items-center justify-between font-bold">
+                          <span>{sch.subject}</span>
+                          <span className="font-mono text-[11px] text-mono-500">{sch.startTime} - {sch.endTime}</span>
+                        </div>
+                        {sch.room && <p className="text-[11px] text-mono-500 mt-0.5 font-medium">{schMeta}</p>}
                       </div>
-                      {sch.room && <p className="text-[11px] text-mono-500 mt-0.5">📍 {sch.room}</p>}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -395,10 +379,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             {/* 2. Tasks Due on Selected Date */}
             <div className="space-y-2 pt-2 border-t border-mono-200 dark:border-mono-800">
               <div className="flex items-center justify-between text-xs font-extrabold">
-                <div className="flex items-center gap-2">
-                  <CheckSquare className="w-3.5 h-3.5" />
-                  <span>Tugas & PR Jatuh Tempo</span>
-                </div>
+                <span>Tugas & PR Jatuh Tempo</span>
                 <span className="text-[10px] font-mono text-mono-500">{selectedDayTasks.length}</span>
               </div>
 
@@ -406,24 +387,24 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 <p className="text-xs text-mono-500 italic">Tidak ada tugas jatuh tempo pada hari ini.</p>
               ) : (
                 <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                  {selectedDayTasks.map((tsk) => (
-                    <div key={tsk.id} className="p-2.5 rounded-xl bg-mono-50 dark:bg-mono-950 border border-mono-200 dark:border-mono-800 text-xs flex items-center justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className={`font-bold truncate ${tsk.completed ? 'line-through text-mono-400' : ''}`}>
-                          {tsk.title}
-                        </p>
-                        {tsk.subjectName && (
-                          <span className="text-[10px] font-mono text-mono-500">{tsk.subjectName}</span>
-                        )}
+                  {selectedDayTasks.map((tsk) => {
+                    const tskMeta = [tsk.title, tsk.subjectName].filter(Boolean).join(' ~ ');
+                    return (
+                      <div key={tsk.id} className="p-2.5 rounded-xl bg-mono-50 dark:bg-mono-950 border border-mono-200 dark:border-mono-800 text-xs flex items-center justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-bold truncate ${tsk.completed ? 'line-through text-mono-400' : ''}`}>
+                            {tskMeta}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => onToggleTask(tsk.id)}
+                          className="text-xs px-2 py-0.5 rounded bg-mono-200 dark:bg-mono-800 text-mono-800 dark:text-mono-200 font-bold"
+                        >
+                          {tsk.completed ? 'Batal' : 'Selesai'}
+                        </button>
                       </div>
-                      <button
-                        onClick={() => onToggleTask(tsk.id)}
-                        className="text-xs px-2 py-0.5 rounded bg-mono-200 dark:bg-mono-800 text-mono-800 dark:text-mono-200 font-bold"
-                      >
-                        {tsk.completed ? 'Batal' : 'Selesai'}
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -431,10 +412,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             {/* 3. Outside Events on Selected Date */}
             <div className="space-y-2 pt-2 border-t border-mono-200 dark:border-mono-800">
               <div className="flex items-center justify-between text-xs font-extrabold">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Agenda Luar Sekolah</span>
-                </div>
+                <span>Agenda Luar Sekolah</span>
                 <span className="text-[10px] font-mono text-mono-500">{selectedDayEvents.length}</span>
               </div>
 
@@ -442,29 +420,36 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 <p className="text-xs text-mono-500 italic">Tidak ada agenda kegiatan luar pada hari ini.</p>
               ) : (
                 <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                  {selectedDayEvents.map((evt) => (
-                    <div key={evt.id} className="p-2.5 rounded-xl bg-mono-50 dark:bg-mono-950 border border-mono-200 dark:border-mono-800 text-xs flex items-center justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          {evt.tier === 'penting' && (
-                            <span className="text-[9px] font-black uppercase px-1.5 py-0.2 bg-black text-white dark:bg-white dark:text-black rounded">
-                              PENTING
-                            </span>
-                          )}
-                          <p className={`font-bold truncate ${evt.completed ? 'line-through text-mono-400' : ''}`}>
-                            {evt.title}
-                          </p>
+                  {selectedDayEvents.map((evt) => {
+                    const evtMeta = [
+                      evt.title,
+                      evt.time ? `Pukul ${evt.time}` : '',
+                      evt.location
+                    ].filter(Boolean).join(' ~ ');
+
+                    return (
+                      <div key={evt.id} className="p-2.5 rounded-xl bg-mono-50 dark:bg-mono-950 border border-mono-200 dark:border-mono-800 text-xs flex items-center justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            {evt.tier === 'penting' && (
+                              <span className="text-[9px] font-black uppercase px-1.5 py-0.2 bg-black text-white dark:bg-white dark:text-black rounded">
+                                PENTING
+                              </span>
+                            )}
+                            <p className={`font-bold truncate ${evt.completed ? 'line-through text-mono-400' : ''}`}>
+                              {evtMeta}
+                            </p>
+                          </div>
                         </div>
-                        {evt.location && <p className="text-[10px] text-mono-500 mt-0.5">📍 {evt.location}</p>}
+                        <button
+                          onClick={() => onToggleEvent(evt.id)}
+                          className="text-xs px-2 py-0.5 rounded bg-mono-200 dark:bg-mono-800 text-mono-800 dark:text-mono-200 font-bold"
+                        >
+                          {evt.completed ? 'Batal' : 'Selesai'}
+                        </button>
                       </div>
-                      <button
-                        onClick={() => onToggleEvent(evt.id)}
-                        className="text-xs px-2 py-0.5 rounded bg-mono-200 dark:bg-mono-800 text-mono-800 dark:text-mono-200 font-bold"
-                      >
-                        {evt.completed ? 'Batal' : 'Selesai'}
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

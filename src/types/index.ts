@@ -14,16 +14,24 @@ export interface SchoolSchedule {
   createdAt: string;
 }
 
+export interface SubTaskItem {
+  id: string;
+  title: string;
+  completed: boolean;
+  subTasks?: SubTaskItem[];
+}
+
 export interface TaskItem {
   id: string;
   title: string; // e.g. "PR MTK Halaman 45"
   description?: string; // e.g. "Kerjakan soal nomor 1-15 di buku tugas"
   scheduleId?: string; // id of linked SchoolSchedule (optional)
   subjectName?: string; // e.g. "Matematika"
-  dueDate: string; // "YYYY-MM-DD"
-  dueTime?: string; // "23:59"
+  dueDate?: string; // "YYYY-MM-DD" (opsional)
+  dueTime?: string; // "23:59" (opsional)
   completed: boolean;
   completedAt?: string;
+  subTasks?: SubTaskItem[]; // Point / sub-point yang dapat dicentang & di-minimize
   createdAt: string;
 }
 
@@ -49,3 +57,4 @@ export interface DailyNote {
 }
 
 export type ActiveTab = 'dashboard' | 'schedule' | 'tasks' | 'events' | 'calendar';
+

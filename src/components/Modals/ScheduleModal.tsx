@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, BookOpen, Clock, MapPin, User, FileText } from 'lucide-react';
+import { X } from 'lucide-react';
 import { SchoolSchedule, DayOfWeek, DAYS_OF_WEEK } from '../../types';
 
 interface ScheduleModalProps {
@@ -71,19 +71,9 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
       >
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-3 border-b border-mono-100 dark:border-mono-800">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-black text-white dark:bg-white dark:text-black flex items-center justify-center font-bold">
-              <BookOpen className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="font-extrabold text-lg tracking-tight">
-                {editingSchedule ? 'Edit Mata Pelajaran' : 'Tambah Jadwal Pelajaran'}
-              </h2>
-              <p className="text-xs text-mono-500">
-                Jadwal ini permanen mingguan (Senin - Sabtu) dan tidak akan hilang kecuali dihapus.
-              </p>
-            </div>
-          </div>
+          <h2 className="font-extrabold text-lg tracking-tight">
+            {editingSchedule ? 'Edit Jadwal' : 'Tambah Jadwal'}
+          </h2>
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg text-mono-400 hover:text-black dark:hover:text-white hover:bg-mono-100 dark:hover:bg-mono-800"
@@ -99,7 +89,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1">
-                Hari Pelajaran *
+                Hari *
               </label>
               <select
                 value={day}
@@ -114,7 +104,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
 
             <div className="sm:col-span-2">
               <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1">
-                Nama Mata Pelajaran *
+                Mata Pelajaran *
               </label>
               <input
                 type="text"
@@ -130,9 +120,8 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
           {/* Jam Mulai & Jam Selesai */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5" />
-                <span>Jam Mulai *</span>
+              <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1">
+                Jam Mulai *
               </label>
               <input
                 type="time"
@@ -144,9 +133,8 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5" />
-                <span>Jam Selesai *</span>
+              <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1">
+                Jam Selesai *
               </label>
               <input
                 type="time"
@@ -161,9 +149,8 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
           {/* Ruangan & Guru */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1 flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5" />
-                <span>Ruang / Kelas</span>
+              <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1">
+                Ruang / Kelas
               </label>
               <input
                 type="text"
@@ -175,9 +162,8 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1 flex items-center gap-1">
-                <User className="w-3.5 h-3.5" />
-                <span>Nama Guru / Pengajar</span>
+              <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1">
+                Nama Guru / Pengajar
               </label>
               <input
                 type="text"
@@ -191,9 +177,8 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
 
           {/* Catatan / Catatan Tetap */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1 flex items-center gap-1">
-              <FileText className="w-3.5 h-3.5" />
-              <span>Catatan Khusus Mapel</span>
+            <label className="block text-xs font-bold uppercase tracking-wider text-mono-700 dark:text-mono-300 mb-1">
+              Catatan Khusus Mapel
             </label>
             <textarea
               rows={2}

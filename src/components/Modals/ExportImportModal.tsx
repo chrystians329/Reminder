@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, DownloadCloud, UploadCloud, Copy, Check, RotateCcw, ShieldCheck } from 'lucide-react';
+import { X } from 'lucide-react';
 import { StorageService } from '../../services/storage';
 
 interface ExportImportModalProps {
@@ -78,18 +78,13 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
       >
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-mono-100 dark:border-mono-800">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-black text-white dark:bg-white dark:text-black flex items-center justify-center font-bold">
-              <DownloadCloud className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="font-extrabold text-lg tracking-tight">
-                Cadangan & Ekspor Data
-              </h2>
-              <p className="text-xs text-mono-500">
-                Simpan data jadwal, tugas, dan kegiatan agar tidak pernah hilang.
-              </p>
-            </div>
+          <div>
+            <h2 className="font-extrabold text-lg tracking-tight">
+              Cadangan & Ekspor Data
+            </h2>
+            <p className="text-xs text-mono-500">
+              Simpan data jadwal, tugas, dan kegiatan agar tidak pernah hilang.
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -100,12 +95,11 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
         </div>
 
         {message && (
-          <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
+          <div className={`p-3 rounded-xl text-xs font-bold ${
             message.type === 'success'
               ? 'bg-mono-200 text-mono-900 dark:bg-mono-800 dark:text-mono-100'
               : 'bg-black text-white dark:bg-white dark:text-black'
           }`}>
-            <ShieldCheck className="w-4 h-4" />
             <span>{message.text}</span>
           </div>
         )}
@@ -118,18 +112,16 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={handleDownload}
-              className="py-2.5 px-3 rounded-xl bg-black text-white dark:bg-white dark:text-black text-xs font-bold flex items-center justify-center gap-1.5 hover:opacity-90 active:scale-95 transition-all shadow-sm"
+              className="py-2.5 px-3 rounded-xl bg-black text-white dark:bg-white dark:text-black text-xs font-bold text-center hover:opacity-90 active:scale-95 transition-all shadow-sm"
             >
-              <DownloadCloud className="w-4 h-4" />
-              <span>Unduh File .JSON</span>
+              Unduh File .JSON
             </button>
 
             <button
               onClick={handleCopy}
-              className="py-2.5 px-3 rounded-xl border border-mono-300 dark:border-mono-700 hover:border-black dark:hover:border-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+              className="py-2.5 px-3 rounded-xl border border-mono-300 dark:border-mono-700 hover:border-black dark:hover:border-white text-xs font-bold text-center transition-colors"
             >
-              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              <span>{copied ? 'Tersalin!' : 'Salin JSON'}</span>
+              {copied ? 'Tersalin!' : 'Salin JSON'}
             </button>
           </div>
         </div>
@@ -148,10 +140,9 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
           />
           <button
             onClick={handleImportText}
-            className="w-full py-2.5 px-3 rounded-xl border border-black dark:border-white bg-mono-100 dark:bg-mono-800 text-black dark:text-white text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all"
+            className="w-full py-2.5 px-3 rounded-xl border border-black dark:border-white bg-mono-100 dark:bg-mono-800 text-black dark:text-white text-xs font-bold text-center hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all"
           >
-            <UploadCloud className="w-4 h-4" />
-            <span>Pulihkan Data dari JSON</span>
+            Pulihkan Data dari JSON
           </button>
         </div>
 
@@ -160,10 +151,9 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
           <span className="text-xs text-mono-500">Mulai dari contoh awal?</span>
           <button
             onClick={handleResetDefaults}
-            className="text-xs font-bold text-mono-700 dark:text-mono-300 hover:text-black dark:hover:text-white flex items-center gap-1 underline"
+            className="text-xs font-bold text-mono-700 dark:text-mono-300 hover:text-black dark:hover:text-white underline"
           >
-            <RotateCcw className="w-3 h-3" />
-            <span>Muat Data Contoh Bawaan</span>
+            Muat Data Contoh Bawaan
           </button>
         </div>
 
