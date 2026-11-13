@@ -1,6 +1,7 @@
 import { TaskItem, OutOfSchoolEvent } from '../types';
 import { formatDateKey, addDays } from '../utils/dateUtils';
 import { StorageService, AppSettings } from './storage';
+import { SoundService } from './soundService';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
 
@@ -88,6 +89,13 @@ export const NotificationService = {
   },
 
   async showNotification(title: string, body: string, idNum: number = Date.now() % 1000000) {
+    const settings = StorageService.getSettings();
+
+    // Play sound if enabled
+    if (settings.notificationSound) {
+      SoundService.playSelectedSound(settings.soundType, settings.customSoundDataUri);
+    }
+
     if (this.isNative()) {
       try {
         await LocalNotifications.schedule({
@@ -96,6 +104,7 @@ export const NotificationService = {
               title,
               body,
               id: idNum,
+              sound: settings.soundType === 'system' ? 'beep.wav' : undefined,
               schedule: { at: new Date(Date.now() + 500) }
             }
           ]

@@ -1,5 +1,4 @@
 import { SchoolSchedule, TaskItem, OutOfSchoolEvent, DailyNote } from '../types';
-import { DEFAULT_SCHEDULE, DEFAULT_TASKS, DEFAULT_EVENTS } from '../constants/defaultData';
 import { formatDateKey, isTaskOverdue } from '../utils/dateUtils';
 
 const KEYS = {
@@ -19,6 +18,10 @@ export interface AppSettings {
   darkMode: boolean;
   autoHideExpiredTasks: boolean;
   notificationSound: boolean;
+  // Sound settings
+  soundType: 'system' | 'chime' | 'bell' | 'ping' | 'custom';
+  customSoundDataUri?: string; // base64 / data-uri
+  customSoundName?: string;
   // Notifikasi Tugas
   notifyTaskEnabled: boolean;
   notifyTaskTime: string; // "HH:mm" default "18:30"
@@ -36,6 +39,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   darkMode: false,
   autoHideExpiredTasks: true,
   notificationSound: true,
+  soundType: 'system',
+  customSoundDataUri: undefined,
+  customSoundName: undefined,
   notifyTaskEnabled: true,
   notifyTaskTime: '18:30',
   notifyTaskHDays: 1,
@@ -50,9 +56,10 @@ export const StorageService = {
   init() {
     const isInit = localStorage.getItem(KEYS.INITIALIZED);
     if (!isInit) {
-      this.saveSchedules(DEFAULT_SCHEDULE);
-      this.saveTasks(DEFAULT_TASKS);
-      this.saveEvents(DEFAULT_EVENTS);
+      // Default: clean state without sample data
+      this.saveSchedules([]);
+      this.saveTasks([]);
+      this.saveEvents([]);
       this.saveSettings(DEFAULT_SETTINGS);
       localStorage.setItem(KEYS.INITIALIZED, 'true');
     }
@@ -62,9 +69,9 @@ export const StorageService = {
   getSchedules(): SchoolSchedule[] {
     try {
       const data = localStorage.getItem(KEYS.SCHEDULES);
-      return data ? JSON.parse(data) : DEFAULT_SCHEDULE;
+      return data ? JSON.parse(data) : [];
     } catch {
-      return DEFAULT_SCHEDULE;
+      return [];
     }
   },
 
@@ -119,9 +126,9 @@ export const StorageService = {
   getTasks(): TaskItem[] {
     try {
       const data = localStorage.getItem(KEYS.TASKS);
-      return data ? JSON.parse(data) : DEFAULT_TASKS;
+      return data ? JSON.parse(data) : [];
     } catch {
-      return DEFAULT_TASKS;
+      return [];
     }
   },
 
@@ -226,9 +233,9 @@ export const StorageService = {
   getEvents(): OutOfSchoolEvent[] {
     try {
       const data = localStorage.getItem(KEYS.EVENTS);
-      return data ? JSON.parse(data) : DEFAULT_EVENTS;
+      return data ? JSON.parse(data) : [];
     } catch {
-      return DEFAULT_EVENTS;
+      return [];
     }
   },
 
@@ -363,9 +370,9 @@ export const StorageService = {
   },
 
   resetDefaults() {
-    this.saveSchedules(DEFAULT_SCHEDULE);
-    this.saveTasks(DEFAULT_TASKS);
-    this.saveEvents(DEFAULT_EVENTS);
+    this.saveSchedules([]);
+    this.saveTasks([]);
+    this.saveEvents([]);
     this.saveSettings(DEFAULT_SETTINGS);
   }
 };

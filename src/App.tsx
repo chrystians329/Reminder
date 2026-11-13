@@ -10,6 +10,8 @@ import {
 import { StorageService, AppSettings } from './services/storage';
 import { SyncService, SyncStatus } from './services/syncService';
 import { NotificationService } from './services/notificationService';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { DashboardView } from './components/DashboardView';
@@ -65,6 +67,13 @@ export function App() {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
+    }
+
+    // Configure native status bar so it doesn't overlap header
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
+      StatusBar.setStyle({ style: settings.darkMode ? Style.Dark : Style.Light }).catch(() => {});
+      StatusBar.setBackgroundColor({ color: settings.darkMode ? '#0a0a0a' : '#ffffff' }).catch(() => {});
     }
 
     // Initialize Real-time Sync
@@ -131,6 +140,12 @@ export function App() {
     } else {
       document.documentElement.classList.remove('dark');
     }
+
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.setStyle({ style: nextMode ? Style.Dark : Style.Light }).catch(() => {});
+      StatusBar.setBackgroundColor({ color: nextMode ? '#0a0a0a' : '#ffffff' }).catch(() => {});
+    }
+
     const newSettings = { ...appSettings, darkMode: nextMode };
     setAppSettings(newSettings);
     StorageService.saveSettings(newSettings);
@@ -148,18 +163,6 @@ export function App() {
     const newSettings = { ...appSettings, ...updates };
     setAppSettings(newSettings);
     StorageService.saveSettings(newSettings);
-  };
-
-  const handleTestNotification = async () => {
-    const perm = await NotificationService.getPermission();
-    if (perm !== 'granted') {
-      const granted = await NotificationService.requestPermission();
-      if (!granted) {
-        alert('Izin notifikasi tidak diberikan di perangkat Anda.');
-        return;
-      }
-    }
-    await NotificationService.sendTestNotification();
   };
 
   // --- Task Handlers ---
@@ -357,7 +360,6 @@ export function App() {
         pendingTasksCount={pendingTasksCount}
         settings={appSettings}
         onUpdateSettings={handleUpdateSettings}
-        onTestNotification={handleTestNotification}
         isOnline={syncStatus.isOnline}
         isPaired={syncStatus.isPaired}
       />

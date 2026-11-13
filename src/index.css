@@ -16,12 +16,14 @@
     -webkit-tap-highlight-color: transparent;
     scroll-behavior: smooth;
     touch-action: manipulation;
+    padding-top: env(safe-area-inset-top, 0px);
   }
 
   body {
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    padding-top: env(safe-area-inset-top, 0px);
   }
 }
 
