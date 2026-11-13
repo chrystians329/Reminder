@@ -157,7 +157,7 @@ export const Header: React.FC<HeaderProps> = ({
   );
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 dark:bg-mono-950/95 backdrop-blur-md border-b border-mono-200 dark:border-mono-800 transition-colors pt-[env(safe-area-inset-top,0px)]">
+    <header className="sticky top-0 z-40 bg-white/95 dark:bg-mono-950/95 backdrop-blur-md border-b border-mono-200 dark:border-mono-800 transition-colors">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         
         {/* Brand / Logo */}
