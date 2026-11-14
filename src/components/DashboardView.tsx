@@ -3,9 +3,10 @@ import {
   CheckCircle2, 
   Circle, 
   ChevronRight,
-  Trash2
+  Trash2,
+  Edit2
 } from 'lucide-react';
-import { SchoolSchedule, TaskItem, OutOfSchoolEvent, DayOfWeek, PriorityTier, SubTaskItem } from '../types';
+import { SchoolSchedule, TaskItem, OutOfSchoolEvent, DayOfWeek, PriorityTier, SubTaskItem, TodoItem, AllDayOfWeek } from '../types';
 import { 
   formatDateKey, 
   getDayName, 
@@ -15,34 +16,49 @@ import {
 } from '../utils/dateUtils';
 import { StorageService } from '../services/storage';
 import { TaskTreeItem } from './TaskTreeItem';
+import { TodoItemRow } from './TodoItemRow';
 
 interface DashboardViewProps {
   schedules: SchoolSchedule[];
   tasks: TaskItem[];
   events: OutOfSchoolEvent[];
+  todos?: TodoItem[];
   onToggleTask: (id: string) => void;
   onUpdateSubTasks: (taskId: string, subTasks: SubTaskItem[]) => void;
   onDeleteTask: (id: string) => void;
   onOpenEditTask?: (task: TaskItem) => void;
+  onOpenEditSchedule?: (schedule: SchoolSchedule) => void;
   onToggleEvent: (id: string) => void;
   onDeleteEvent: (id: string) => void;
+  onOpenEditEvent?: (event: OutOfSchoolEvent) => void;
+  onOpenAddTodo: () => void;
+  onOpenEditTodo: (todo: TodoItem) => void;
+  onToggleTodo: (id: string, dateKey: string) => void;
+  onDeleteTodo: (id: string) => void;
   onOpenAddTask: (subjectName?: string, defaultDate?: string) => void;
   onOpenAddSchedule: (defaultDay?: DayOfWeek) => void;
   onOpenAddEvent: (defaultDate?: string) => void;
   onOpenBulkAdd: (type: 'schedule' | 'task' | 'event') => void;
-  onNavigateToTab: (tab: 'schedule' | 'tasks' | 'events' | 'calendar') => void;
+  onNavigateToTab: (tab: 'schedule' | 'tasks' | 'events' | 'calendar' | 'todos') => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   schedules,
   tasks,
   events,
+  todos = [],
   onToggleTask,
   onUpdateSubTasks,
   onDeleteTask,
   onOpenEditTask,
+  onOpenEditSchedule,
   onToggleEvent,
   onDeleteEvent,
+  onOpenEditEvent,
+  onOpenAddTodo,
+  onOpenEditTodo,
+  onToggleTodo,
+  onDeleteTodo,
   onOpenAddTask,
   onOpenAddSchedule,
   onOpenAddEvent,
@@ -122,6 +138,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       }
       return (a.time || '23:59').localeCompare(b.time || '23:59');
     });
+
+  // Filter To-Do items active for selectedDate
+  const selectedDayNameFull = getDayName(selectedDate) as AllDayOfWeek;
+  const isTodoActive = (todo: TodoItem): boolean => {
+    if (todo.repeatType === 'daily') return true;
+    if (todo.repeatType === 'specific_days' && todo.repeatDays) {
+      return todo.repeatDays.includes(selectedDayNameFull);
+    }
+    if (todo.repeatType === 'once') {
+      return todo.targetDate === selectedDate;
+    }
+    return false;
+  };
+
+  const todayTodos = todos.filter(isTodoActive);
+  const completedTodosToday = todayTodos.filter(t => (t.completedDates || []).includes(selectedDate)).length;
 
   // Quick stats
   const pendingTasksToday = dateTasks.filter(t => !t.completed).length;
@@ -215,13 +247,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Quick summary metric cards */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 mt-5 pt-5 border-t border-mono-200 dark:border-mono-800 text-center">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mt-5 pt-5 border-t border-mono-200 dark:border-mono-800 text-center">
           <div 
             onClick={() => onNavigateToTab('schedule')}
             className="cursor-pointer p-2.5 rounded-xl hover:bg-mono-100 dark:hover:bg-mono-800/50 transition-colors"
           >
             <span className="text-xl sm:text-2xl font-black block">{todaySchedules.length}</span>
             <span className="text-[11px] sm:text-xs text-mono-500 font-medium">Jadwal Hari Ini</span>
+          </div>
+          <div 
+            onClick={() => onNavigateToTab('todos')}
+            className="cursor-pointer p-2.5 rounded-xl hover:bg-mono-100 dark:hover:bg-mono-800/50 transition-colors"
+          >
+            <span className="text-xl sm:text-2xl font-black block">{todayTodos.length}</span>
+            <span className="text-[11px] sm:text-xs text-mono-500 font-medium">To-Do ({completedTodosToday} Selesai)</span>
           </div>
           <div 
             onClick={() => onNavigateToTab('tasks')}
@@ -368,14 +407,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         )}
                       </div>
 
-                      {/* Quick Action: Add task linked to this subject without requiring deadline */}
-                      <button
-                        onClick={() => onOpenAddTask(schedule.subject, undefined)}
-                        className="p-1.5 text-xs font-bold text-mono-500 hover:text-black dark:hover:text-white rounded-lg hover:bg-mono-200 dark:hover:bg-mono-800 transition-colors"
-                        title={`Tambah tugas untuk ${schedule.subject}`}
-                      >
-                        + Tugas
-                      </button>
+                      {/* Action buttons: Add task & Edit schedule */}
+                      <div className="flex items-center gap-1 self-start">
+                        <button
+                          onClick={() => onOpenAddTask(schedule.subject, undefined)}
+                          className="px-2 py-1 text-xs font-bold text-mono-600 dark:text-mono-400 hover:text-black dark:hover:text-white rounded-lg hover:bg-mono-200 dark:hover:bg-mono-800 transition-colors"
+                          title={`Tambah tugas untuk ${schedule.subject}`}
+                        >
+                          + Tugas
+                        </button>
+                        {onOpenEditSchedule && (
+                          <button
+                            onClick={() => onOpenEditSchedule(schedule)}
+                            className="p-1.5 text-mono-400 hover:text-black dark:hover:text-white rounded-lg hover:bg-mono-200 dark:hover:bg-mono-800 transition-colors"
+                            title="Edit Jadwal"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -392,6 +442,65 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
             </div>
           )}
+
+          {/* SECTION: TO-DO LIST HARI INI */}
+          <div className="space-y-3 pt-2 border-t border-mono-200 dark:border-mono-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-extrabold tracking-tight">
+                  To-Do ({selectedDayName})
+                </h2>
+                {todayTodos.length > 0 && (
+                  <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-mono-200 dark:bg-mono-800 text-mono-800 dark:text-mono-200">
+                    {completedTodosToday}/{todayTodos.length}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={onOpenAddTodo}
+                className="text-xs font-bold text-mono-700 dark:text-mono-300 hover:text-black dark:hover:text-white"
+              >
+                + Tambah To-Do
+              </button>
+            </div>
+
+            {todayTodos.length === 0 ? (
+              <div className="p-4 text-center border border-dashed border-mono-200 dark:border-mono-800 rounded-2xl bg-white dark:bg-mono-900">
+                <p className="text-xs text-mono-500">
+                  Tidak ada kegiatan to-do untuk hari ini.
+                </p>
+                <button
+                  onClick={onOpenAddTodo}
+                  className="mt-2 text-xs font-bold text-black dark:text-white underline"
+                >
+                  + Tambah To-Do Baru
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {todayTodos.map(todo => (
+                  <TodoItemRow
+                    key={todo.id}
+                    todo={todo}
+                    currentDateKey={selectedDate}
+                    onToggle={onToggleTodo}
+                    onEdit={onOpenEditTodo}
+                    onDelete={onDeleteTodo}
+                    showRepeatBadge={false}
+                  />
+                ))}
+                <div className="text-right pt-1">
+                  <button
+                    onClick={() => onNavigateToTab('todos')}
+                    className="text-xs font-bold text-mono-500 hover:text-black dark:hover:text-white inline-flex items-center gap-1"
+                  >
+                    <span>Buka Tab To-Do Lengkap</span>
+                    <ChevronRight className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Quick Daily Scratchpad / Memo */}
           <div className="p-4 rounded-2xl bg-white dark:bg-mono-900 border border-mono-200 dark:border-mono-800 space-y-2">
@@ -617,14 +726,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           )}
                         </div>
 
-                        {/* Delete button */}
-                        <button
-                          onClick={() => onDeleteEvent(evt.id)}
-                          className="p-1 text-mono-400 hover:text-black dark:hover:text-white transition-colors"
-                          title="Hapus agenda"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {/* Action buttons: Edit & Delete */}
+                        <div className="flex items-center gap-1 self-start">
+                          {onOpenEditEvent && (
+                            <button
+                              onClick={() => onOpenEditEvent(evt)}
+                              className="p-1 text-mono-400 hover:text-black dark:hover:text-white transition-colors"
+                              title="Edit agenda"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => onDeleteEvent(evt.id)}
+                            className="p-1 text-mono-400 hover:text-black dark:hover:text-white transition-colors"
+                            title="Hapus agenda"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );

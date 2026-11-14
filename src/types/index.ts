@@ -2,6 +2,23 @@ export type DayOfWeek = 'Senin' | 'Selasa' | 'Rabu' | 'Kamis' | 'Jumat' | 'Sabtu
 
 export const DAYS_OF_WEEK: DayOfWeek[] = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
+export type AllDayOfWeek = 'Senin' | 'Selasa' | 'Rabu' | 'Kamis' | 'Jumat' | 'Sabtu' | 'Minggu';
+export const ALL_DAYS_OF_WEEK: AllDayOfWeek[] = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+
+export type TodoRepeatType = 'once' | 'daily' | 'specific_days';
+
+export interface TodoItem {
+  id: string;
+  title: string;
+  repeatType: TodoRepeatType; // 'once' | 'daily' | 'specific_days'
+  repeatDays?: AllDayOfWeek[]; // e.g. ['Senin', 'Minggu']
+  targetDate?: string; // YYYY-MM-DD for 'once'
+  time?: string; // "07:00" (opsional)
+  notes?: string;
+  completedDates: string[]; // List of YYYY-MM-DD when completed
+  createdAt: string;
+}
+
 export interface SchoolSchedule {
   id: string;
   day: DayOfWeek;
@@ -56,5 +73,5 @@ export interface DailyNote {
   updatedAt: string;
 }
 
-export type ActiveTab = 'dashboard' | 'schedule' | 'tasks' | 'events' | 'calendar';
+export type ActiveTab = 'dashboard' | 'schedule' | 'tasks' | 'events' | 'calendar' | 'todos';
 

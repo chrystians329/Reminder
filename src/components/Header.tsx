@@ -27,10 +27,11 @@ interface HeaderProps {
   setActiveTab: (tab: ActiveTab) => void;
   darkMode: boolean;
   onToggleDarkMode: () => void;
-  onOpenQuickAdd: () => void;
+  onOpenQuickAdd?: () => void;
   onOpenExportImport: () => void;
   onOpenSync: () => void;
   pendingTasksCount: number;
+  pendingTodosCount?: number;
   settings: AppSettings;
   onUpdateSettings: (updates: Partial<AppSettings>) => void;
   isOnline: boolean;
@@ -42,10 +43,10 @@ export const Header: React.FC<HeaderProps> = ({
   setActiveTab,
   darkMode,
   onToggleDarkMode,
-  onOpenQuickAdd,
   onOpenExportImport,
   onOpenSync,
   pendingTasksCount,
+  pendingTodosCount,
   settings,
   onUpdateSettings,
   isOnline,
@@ -59,6 +60,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'dashboard', label: 'Hari Ini' },
     { id: 'schedule', label: 'Jadwal' },
     { id: 'tasks', label: 'Tugas & PR', badge: pendingTasksCount },
+    { id: 'todos', label: 'To-Do', badge: pendingTodosCount },
     { id: 'events', label: 'Agenda Luar' },
     { id: 'calendar', label: 'Kalender' },
   ];
@@ -157,7 +159,10 @@ export const Header: React.FC<HeaderProps> = ({
   );
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 dark:bg-mono-950/95 backdrop-blur-md border-b border-mono-200 dark:border-mono-800 transition-colors">
+    <header 
+      className="sticky top-0 z-40 bg-white/95 dark:bg-mono-950/95 backdrop-blur-md border-b border-mono-200 dark:border-mono-800 transition-colors" 
+      style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), var(--status-bar-height, 0px))' }}
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         
         {/* Brand / Logo */}
@@ -210,14 +215,6 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right Action Buttons */}
         <div className="relative flex items-center gap-2">
-          {/* Quick Add Button */}
-          <button
-            onClick={onOpenQuickAdd}
-            className="px-3.5 py-1.5 rounded-lg bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all text-xs font-bold shadow-sm"
-          >
-            + Tambah
-          </button>
-
           {/* Hamburger Menu Toggle Button */}
           <button
             onClick={() => {

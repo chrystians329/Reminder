@@ -1,10 +1,11 @@
-import { SchoolSchedule, TaskItem, OutOfSchoolEvent } from '../types';
+import { SchoolSchedule, TaskItem, OutOfSchoolEvent, TodoItem } from '../types';
 import { StorageService } from './storage';
 
 export interface FullSyncPayload {
   schedules: SchoolSchedule[];
   tasks: TaskItem[];
   events: OutOfSchoolEvent[];
+  todos?: TodoItem[];
   updatedAt: number;
   senderId: string;
 }
@@ -138,7 +139,7 @@ export const SyncService = {
   },
 
   // Broadcast data changes to other devices
-  broadcastChange(schedules: SchoolSchedule[], tasks: TaskItem[], events: OutOfSchoolEvent[]) {
+  broadcastChange(schedules: SchoolSchedule[], tasks: TaskItem[], events: OutOfSchoolEvent[], todos?: TodoItem[]) {
     const now = Date.now();
     this.lastKnownTimestamp = now;
 
@@ -146,6 +147,7 @@ export const SyncService = {
       schedules,
       tasks,
       events,
+      todos: todos || StorageService.getTodos(),
       updatedAt: now,
       senderId: DEVICE_ID
     };

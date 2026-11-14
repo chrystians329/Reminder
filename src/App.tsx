@@ -5,8 +5,11 @@ import {
   OutOfSchoolEvent, 
   ActiveTab, 
   DayOfWeek,
-  SubTaskItem
+  SubTaskItem,
+  TodoItem,
+  AllDayOfWeek
 } from './types';
+import { formatDateKey, getDayName } from './utils/dateUtils';
 import { StorageService, AppSettings } from './services/storage';
 import { SyncService, SyncStatus } from './services/syncService';
 import { NotificationService } from './services/notificationService';
@@ -19,9 +22,11 @@ import { ScheduleView } from './components/ScheduleView';
 import { TasksView } from './components/TasksView';
 import { EventsView } from './components/EventsView';
 import { CalendarView } from './components/CalendarView';
+import { TodosView } from './components/TodosView';
 import { TaskModal } from './components/Modals/TaskModal';
 import { ScheduleModal } from './components/Modals/ScheduleModal';
 import { EventModal } from './components/Modals/EventModal';
+import { TodoModal } from './components/Modals/TodoModal';
 import { BulkAddModal, BulkType } from './components/Modals/BulkAddModal';
 import { QuickAddModal } from './components/QuickAddModal';
 import { ExportImportModal } from './components/Modals/ExportImportModal';
@@ -32,6 +37,7 @@ export function App() {
   const [schedules, setSchedules] = useState<SchoolSchedule[]>([]);
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [events, setEvents] = useState<OutOfSchoolEvent[]>([]);
+  const [todos, setTodos] = useState<TodoItem[]>([]);
   const [appSettings, setAppSettings] = useState<AppSettings>(StorageService.getSettings());
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(SyncService.getStatus());
 
@@ -49,6 +55,10 @@ export function App() {
   const [editingEvent, setEditingEvent] = useState<OutOfSchoolEvent | null>(null);
   const [eventModalDefaultDate, setEventModalDefaultDate] = useState<string | undefined>();
 
+  const [isTodoModalOpen, setIsTodoModalOpen] = useState(false);
+  const [editingTodo, setEditingTodo] = useState<TodoItem | null>(null);
+  const [todoModalDefaultDate, setTodoModalDefaultDate] = useState<string | undefined>();
+
   const [isBulkAddOpen, setIsBulkAddOpen] = useState(false);
   const [bulkAddType, setBulkAddType] = useState<BulkType>('task');
 
@@ -59,6 +69,7 @@ export function App() {
   // Initialize and load data on mount
   useEffect(() => {
     StorageService.init();
+    NotificationService.initChannel();
     refreshAllData();
 
     const settings = StorageService.getSettings();
@@ -69,11 +80,15 @@ export function App() {
       document.documentElement.classList.remove('dark');
     }
 
-    // Configure native status bar so it doesn't overlap header
+    // Configure native status bar
     if (Capacitor.isNativePlatform()) {
-      StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
       StatusBar.setStyle({ style: settings.darkMode ? Style.Dark : Style.Light }).catch(() => {});
       StatusBar.setBackgroundColor({ color: settings.darkMode ? '#0a0a0a' : '#ffffff' }).catch(() => {});
+      StatusBar.getInfo().then((info) => {
+        if (info && info.height) {
+          document.documentElement.style.setProperty('--status-bar-height', `${info.height}px`);
+        }
+      }).catch(() => {});
     }
 
     // Initialize Real-time Sync
@@ -81,9 +96,11 @@ export function App() {
       StorageService.saveSchedules(payload.schedules);
       StorageService.saveTasks(payload.tasks);
       StorageService.saveEvents(payload.events);
+      if (payload.todos) StorageService.saveTodos(payload.todos);
       setSchedules(payload.schedules);
       setTasks(payload.tasks);
       setEvents(payload.events);
+      if (payload.todos) setTodos(payload.todos);
     });
 
     const unsubSyncStatus = SyncService.subscribeStatus(setSyncStatus);
@@ -123,14 +140,16 @@ export function App() {
     setSchedules(StorageService.getSchedules());
     setTasks(StorageService.getTasks());
     setEvents(StorageService.getEvents());
+    setTodos(StorageService.getTodos());
   };
 
   const broadcastAll = useCallback((
     curSchedules: SchoolSchedule[], 
     curTasks: TaskItem[], 
-    curEvents: OutOfSchoolEvent[]
+    curEvents: OutOfSchoolEvent[],
+    curTodos?: TodoItem[]
   ) => {
-    SyncService.broadcastChange(curSchedules, curTasks, curEvents);
+    SyncService.broadcastChange(curSchedules, curTasks, curEvents, curTodos);
   }, []);
 
   const handleToggleDarkMode = () => {
@@ -332,6 +351,43 @@ export function App() {
     broadcastAll(schedules, tasks, updated);
   };
 
+  // --- To-Do Handlers ---
+  const handleOpenAddTodo = (defaultDate?: string) => {
+    setEditingTodo(null);
+    setTodoModalDefaultDate(defaultDate);
+    setIsTodoModalOpen(true);
+  };
+
+  const handleOpenEditTodo = (todo: TodoItem) => {
+    setEditingTodo(todo);
+    setTodoModalDefaultDate(todo.targetDate);
+    setIsTodoModalOpen(true);
+  };
+
+  const handleSaveTodo = (todoData: Omit<TodoItem, 'id' | 'createdAt' | 'completedDates'>) => {
+    let updatedTodos: TodoItem[];
+    if (editingTodo) {
+      updatedTodos = StorageService.updateTodo(editingTodo.id, todoData);
+    } else {
+      StorageService.addTodo(todoData);
+      updatedTodos = StorageService.getTodos();
+    }
+    setTodos(updatedTodos);
+    broadcastAll(schedules, tasks, events, updatedTodos);
+  };
+
+  const handleToggleTodo = (id: string, dateKey: string) => {
+    const updated = StorageService.toggleTodoDate(id, dateKey);
+    setTodos(updated);
+    broadcastAll(schedules, tasks, events, updated);
+  };
+
+  const handleDeleteTodo = (id: string) => {
+    const updated = StorageService.deleteTodo(id);
+    setTodos(updated);
+    broadcastAll(schedules, tasks, events, updated);
+  };
+
   // --- Quick Add Dispatcher ---
   const handleSelectQuickAdd = (type: 'task' | 'schedule' | 'event') => {
     if (type === 'task') handleOpenAddTask();
@@ -345,6 +401,15 @@ export function App() {
 
   const pendingTasksCount = tasks.filter((t) => !t.completed).length;
 
+  const todayKey = formatDateKey(new Date());
+  const todayDayName = getDayName(todayKey) as AllDayOfWeek;
+  const pendingTodosCount = todos.filter(t => {
+    const isTodayActive = t.repeatType === 'daily' || 
+      (t.repeatType === 'specific_days' && t.repeatDays?.includes(todayDayName)) ||
+      (t.repeatType === 'once' && t.targetDate === todayKey);
+    return isTodayActive && !(t.completedDates || []).includes(todayKey);
+  }).length;
+
   return (
     <div className="min-h-screen bg-mono-50 text-mono-950 dark:bg-mono-950 dark:text-mono-50 transition-colors duration-200 font-sans flex flex-col">
       
@@ -354,10 +419,10 @@ export function App() {
         setActiveTab={setActiveTab}
         darkMode={appSettings.darkMode}
         onToggleDarkMode={handleToggleDarkMode}
-        onOpenQuickAdd={() => setIsQuickAddOpen(true)}
         onOpenExportImport={() => setIsExportImportOpen(true)}
         onOpenSync={() => setIsSyncModalOpen(true)}
         pendingTasksCount={pendingTasksCount}
+        pendingTodosCount={pendingTodosCount}
         settings={appSettings}
         onUpdateSettings={handleUpdateSettings}
         isOnline={syncStatus.isOnline}
@@ -371,12 +436,19 @@ export function App() {
             schedules={schedules}
             tasks={tasks}
             events={events}
+            todos={todos}
             onToggleTask={handleToggleTask}
             onUpdateSubTasks={handleUpdateSubTasks}
             onDeleteTask={handleDeleteTask}
             onOpenEditTask={handleOpenEditTask}
+            onOpenEditSchedule={handleOpenEditSchedule}
             onToggleEvent={handleToggleEvent}
             onDeleteEvent={handleDeleteEvent}
+            onOpenEditEvent={handleOpenEditEvent}
+            onOpenAddTodo={() => handleOpenAddTodo()}
+            onOpenEditTodo={handleOpenEditTodo}
+            onToggleTodo={handleToggleTodo}
+            onDeleteTodo={handleDeleteTodo}
             onOpenAddTask={handleOpenAddTask}
             onOpenAddSchedule={handleOpenAddSchedule}
             onOpenAddEvent={handleOpenAddEvent}
@@ -413,6 +485,16 @@ export function App() {
           />
         )}
 
+        {activeTab === 'todos' && (
+          <TodosView
+            todos={todos}
+            onOpenAddTodo={() => handleOpenAddTodo()}
+            onOpenEditTodo={handleOpenEditTodo}
+            onToggleTodo={handleToggleTodo}
+            onDeleteTodo={handleDeleteTodo}
+          />
+        )}
+
         {activeTab === 'events' && (
           <EventsView
             events={events}
@@ -433,6 +515,9 @@ export function App() {
             onOpenAddTask={handleOpenAddTask}
             onOpenAddSchedule={handleOpenAddSchedule}
             onOpenAddEvent={handleOpenAddEvent}
+            onOpenEditSchedule={handleOpenEditSchedule}
+            onOpenEditTask={handleOpenEditTask}
+            onOpenEditEvent={handleOpenEditEvent}
             onToggleTask={handleToggleTask}
             onToggleEvent={handleToggleEvent}
           />
@@ -444,9 +529,18 @@ export function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         pendingTasksCount={pendingTasksCount}
+        pendingTodosCount={pendingTodosCount}
       />
 
       {/* Modals with click-outside-to-close */}
+      <TodoModal
+        isOpen={isTodoModalOpen}
+        onClose={() => setIsTodoModalOpen(false)}
+        onSave={handleSaveTodo}
+        editingTodo={editingTodo}
+        defaultDate={todoModalDefaultDate}
+      />
+
       <TaskModal
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}

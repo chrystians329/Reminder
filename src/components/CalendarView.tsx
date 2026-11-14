@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   ChevronLeft, 
-  ChevronRight
+  ChevronRight,
+  Edit2
 } from 'lucide-react';
 import { SchoolSchedule, TaskItem, OutOfSchoolEvent, DayOfWeek } from '../types';
 import { 
@@ -22,6 +23,9 @@ interface CalendarViewProps {
   onOpenAddTask: (subjectName?: string, defaultDate?: string) => void;
   onOpenAddSchedule: (defaultDay?: DayOfWeek) => void;
   onOpenAddEvent: (defaultDate?: string) => void;
+  onOpenEditSchedule?: (schedule: SchoolSchedule) => void;
+  onOpenEditTask?: (task: TaskItem) => void;
+  onOpenEditEvent?: (event: OutOfSchoolEvent) => void;
   onToggleTask: (id: string) => void;
   onToggleEvent: (id: string) => void;
 }
@@ -33,6 +37,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   onOpenAddTask,
   onOpenAddSchedule,
   onOpenAddEvent,
+  onOpenEditSchedule,
+  onOpenEditTask,
+  onOpenEditEvent,
   onToggleTask,
   onToggleEvent
 }) => {
@@ -360,12 +367,23 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   {selectedDaySchedules.map((sch) => {
                     const schMeta = [sch.startTime + ' - ' + sch.endTime, sch.room, sch.teacher].filter(Boolean).join(' ~ ');
                     return (
-                      <div key={sch.id} className="p-2.5 rounded-xl bg-mono-50 dark:bg-mono-950 border border-mono-200 dark:border-mono-800 text-xs">
-                        <div className="flex items-center justify-between font-bold">
-                          <span>{sch.subject}</span>
-                          <span className="font-mono text-[11px] text-mono-500">{sch.startTime} - {sch.endTime}</span>
+                      <div key={sch.id} className="p-2.5 rounded-xl bg-mono-50 dark:bg-mono-950 border border-mono-200 dark:border-mono-800 text-xs flex items-center justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between font-bold">
+                            <span className="truncate">{sch.subject}</span>
+                            <span className="font-mono text-[11px] text-mono-500 shrink-0">{sch.startTime} - {sch.endTime}</span>
+                          </div>
+                          {sch.room && <p className="text-[11px] text-mono-500 mt-0.5 font-medium">{schMeta}</p>}
                         </div>
-                        {sch.room && <p className="text-[11px] text-mono-500 mt-0.5 font-medium">{schMeta}</p>}
+                        {onOpenEditSchedule && (
+                          <button
+                            onClick={() => onOpenEditSchedule(sch)}
+                            className="p-1 rounded text-mono-400 hover:text-black dark:hover:text-white transition-colors"
+                            title="Edit Jadwal"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     );
                   })}
@@ -393,12 +411,23 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                             {tskMeta}
                           </p>
                         </div>
-                        <button
-                          onClick={() => onToggleTask(tsk.id)}
-                          className="text-xs px-2 py-0.5 rounded bg-mono-200 dark:bg-mono-800 text-mono-800 dark:text-mono-200 font-bold"
-                        >
-                          {tsk.completed ? 'Batal' : 'Selesai'}
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {onOpenEditTask && (
+                            <button
+                              onClick={() => onOpenEditTask(tsk)}
+                              className="p-1 rounded text-mono-400 hover:text-black dark:hover:text-white transition-colors"
+                              title="Edit Tugas"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => onToggleTask(tsk.id)}
+                            className="text-xs px-2 py-0.5 rounded bg-mono-200 dark:bg-mono-800 text-mono-800 dark:text-mono-200 font-bold"
+                          >
+                            {tsk.completed ? 'Batal' : 'Selesai'}
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
@@ -438,12 +467,23 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                             </p>
                           </div>
                         </div>
-                        <button
-                          onClick={() => onToggleEvent(evt.id)}
-                          className="text-xs px-2 py-0.5 rounded bg-mono-200 dark:bg-mono-800 text-mono-800 dark:text-mono-200 font-bold"
-                        >
-                          {evt.completed ? 'Batal' : 'Selesai'}
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {onOpenEditEvent && (
+                            <button
+                              onClick={() => onOpenEditEvent(evt)}
+                              className="p-1 rounded text-mono-400 hover:text-black dark:hover:text-white transition-colors"
+                              title="Edit Agenda"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => onToggleEvent(evt.id)}
+                            className="text-xs px-2 py-0.5 rounded bg-mono-200 dark:bg-mono-800 text-mono-800 dark:text-mono-200 font-bold"
+                          >
+                            {evt.completed ? 'Batal' : 'Selesai'}
+                          </button>
+                        </div>
                       </div>
                     );
                   })}

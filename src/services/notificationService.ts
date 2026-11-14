@@ -15,6 +15,23 @@ export const NotificationService = {
     return typeof window !== 'undefined' && 'Notification' in window;
   },
 
+  async initChannel(): Promise<void> {
+    if (this.isNative()) {
+      try {
+        await LocalNotifications.createChannel({
+          id: 'reminder_alerts',
+          name: 'Pengingat Jadwal & Tugas',
+          description: 'Notifikasi pengingat tugas dan agenda dengan suara jelas dan kencang',
+          importance: 5, // IMPORTANCE_HIGH (suara kencang & getar)
+          visibility: 1, // VISIBILITY_PUBLIC
+          vibration: true
+        });
+      } catch (e) {
+        console.warn('Channel creation error:', e);
+      }
+    }
+  },
+
   async getPermission(): Promise<NotificationPermission> {
     if (this.isNative()) {
       try {
@@ -104,8 +121,8 @@ export const NotificationService = {
               title,
               body,
               id: idNum,
-              sound: settings.soundType === 'system' ? 'beep.wav' : undefined,
-              schedule: { at: new Date(Date.now() + 500) }
+              channelId: 'reminder_alerts',
+              schedule: { at: new Date(Date.now() + 200) }
             }
           ]
         });

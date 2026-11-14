@@ -1,10 +1,11 @@
-import { SchoolSchedule, TaskItem, OutOfSchoolEvent, DailyNote } from '../types';
+import { SchoolSchedule, TaskItem, OutOfSchoolEvent, DailyNote, TodoItem } from '../types';
 import { formatDateKey, isTaskOverdue } from '../utils/dateUtils';
 
 const KEYS = {
   SCHEDULES: 'reminder_pelajar_schedules_v1',
   TASKS: 'reminder_pelajar_tasks_v1',
   EVENTS: 'reminder_pelajar_events_v1',
+  TODOS: 'reminder_pelajar_todos_v1',
   NOTES: 'reminder_pelajar_notes_v1',
   SETTINGS: 'reminder_pelajar_settings_v1',
   INITIALIZED: 'reminder_pelajar_initialized_v1'
@@ -60,6 +61,7 @@ export const StorageService = {
       this.saveSchedules([]);
       this.saveTasks([]);
       this.saveEvents([]);
+      this.saveTodos([]);
       this.saveSettings(DEFAULT_SETTINGS);
       localStorage.setItem(KEYS.INITIALIZED, 'true');
     }
@@ -294,6 +296,59 @@ export const StorageService = {
     return events;
   },
 
+  // --- To-Do List (Rutin / Sekali) ---
+  getTodos(): TodoItem[] {
+    try {
+      const data = localStorage.getItem(KEYS.TODOS);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  saveTodos(todos: TodoItem[]) {
+    localStorage.setItem(KEYS.TODOS, JSON.stringify(todos));
+  },
+
+  addTodo(todo: Omit<TodoItem, 'id' | 'createdAt' | 'completedDates'>): TodoItem {
+    const todos = this.getTodos();
+    const newTodo: TodoItem = {
+      ...todo,
+      id: 'todo-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+      completedDates: [],
+      createdAt: new Date().toISOString()
+    };
+    todos.push(newTodo);
+    this.saveTodos(todos);
+    return newTodo;
+  },
+
+  updateTodo(id: string, updates: Partial<TodoItem>): TodoItem[] {
+    const todos = this.getTodos().map(item => item.id === id ? { ...item, ...updates } : item);
+    this.saveTodos(todos);
+    return todos;
+  },
+
+  toggleTodoDate(id: string, dateKey: string = formatDateKey(new Date())): TodoItem[] {
+    const todos = this.getTodos().map(item => {
+      if (item.id !== id) return item;
+      const dates = item.completedDates || [];
+      const isCompleted = dates.includes(dateKey);
+      const updatedDates = isCompleted 
+        ? dates.filter(d => d !== dateKey) 
+        : [...dates, dateKey];
+      return { ...item, completedDates: updatedDates };
+    });
+    this.saveTodos(todos);
+    return todos;
+  },
+
+  deleteTodo(id: string): TodoItem[] {
+    const todos = this.getTodos().filter(item => item.id !== id);
+    this.saveTodos(todos);
+    return todos;
+  },
+
   // --- Daily Notes ---
   getDailyNote(dateStr: string = formatDateKey(new Date())): string {
     try {
@@ -345,11 +400,12 @@ export const StorageService = {
   // --- Export & Import ---
   exportBackupJSON(): string {
     const payload = {
-      version: '1.0',
+      version: '1.1',
       exportedAt: new Date().toISOString(),
       schedules: this.getSchedules(),
       tasks: this.getTasks(),
       events: this.getEvents(),
+      todos: this.getTodos(),
       settings: this.getSettings()
     };
     return JSON.stringify(payload, null, 2);
@@ -361,6 +417,7 @@ export const StorageService = {
       if (Array.isArray(parsed.schedules)) this.saveSchedules(parsed.schedules);
       if (Array.isArray(parsed.tasks)) this.saveTasks(parsed.tasks);
       if (Array.isArray(parsed.events)) this.saveEvents(parsed.events);
+      if (Array.isArray(parsed.todos)) this.saveTodos(parsed.todos);
       if (parsed.settings) this.saveSettings(parsed.settings);
       return true;
     } catch (e) {
@@ -373,6 +430,7 @@ export const StorageService = {
     this.saveSchedules([]);
     this.saveTasks([]);
     this.saveEvents([]);
+    this.saveTodos([]);
     this.saveSettings(DEFAULT_SETTINGS);
   }
 };

@@ -21,18 +21,22 @@ export const ModalWrapper: React.FC<ModalWrapperProps> = ({
   const [isClosing, setIsClosing] = useState(false);
 
   useEffect(() => {
+    let timer: any = null;
     if (isOpen) {
       setRendered(true);
       setIsClosing(false);
-    } else if (rendered && !isClosing) {
+    } else if (rendered) {
       setIsClosing(true);
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         setRendered(false);
         setIsClosing(false);
       }, 160);
-      return () => clearTimeout(timer);
     }
-  }, [isOpen, rendered, isClosing]);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isOpen]);
 
   if (!rendered) return null;
 

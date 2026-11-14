@@ -1,4 +1,5 @@
 // Audio Synthesizer for Reminder Notifications using Web Audio API
+// Optimized for loud, crisp, and clean mobile speaker playback
 
 class SoundManager {
   private audioCtx: AudioContext | null = null;
@@ -16,64 +17,111 @@ class SoundManager {
     return this.audioCtx;
   }
 
-  // Play a chime/bell synthesizer tone
+  // Create a compressor node to maximize perceived loudness without speaker distortion
+  private createMasterChain(ctx: AudioContext): { input: GainNode; output: AudioNode } {
+    const compressor = ctx.createDynamicsCompressor();
+    compressor.threshold.setValueAtTime(-12, ctx.currentTime);
+    compressor.knee.setValueAtTime(10, ctx.currentTime);
+    compressor.ratio.setValueAtTime(6, ctx.currentTime);
+    compressor.attack.setValueAtTime(0.003, ctx.currentTime);
+    compressor.release.setValueAtTime(0.15, ctx.currentTime);
+
+    const masterGain = ctx.createGain();
+    masterGain.gain.setValueAtTime(0.95, ctx.currentTime); // High volume (95%)
+
+    masterGain.connect(compressor);
+    compressor.connect(ctx.destination);
+
+    return { input: masterGain, output: compressor };
+  }
+
+  // Play a loud and clean notification tone
   playPreset(preset: 'chime' | 'bell' | 'ping') {
     try {
       const ctx = this.getAudioContext();
       const now = ctx.currentTime;
+      const { input } = this.createMasterChain(ctx);
 
       if (preset === 'chime') {
-        // Double tone melodic chime (E5 -> A5)
-        this.playTone(ctx, 659.25, now, 0.4, 'sine');
-        this.playTone(ctx, 880.00, now + 0.15, 0.6, 'sine');
+        // 3-note melodic bright chime (D5 -> G5 -> B5) - upbeat, loud, and modern
+        this.playPluckNote(ctx, input, 587.33, now, 0.45);
+        this.playPluckNote(ctx, input, 783.99, now + 0.12, 0.45);
+        this.playPluckNote(ctx, input, 987.77, now + 0.24, 0.7);
       } else if (preset === 'bell') {
-        // Resonant bell sound with harmonics
-        this.playHarmonicBell(ctx, 523.25, now, 1.2);
+        // Resonant acoustic reminder bell with rich harmonics
+        this.playResonantBell(ctx, input, 659.25, now, 1.2);
       } else if (preset === 'ping') {
-        // High crisp ping (C6)
-        this.playTone(ctx, 1046.50, now, 0.35, 'triangle');
+        // Double crisp ping (high presence 1318.5Hz -> 1760Hz)
+        this.playPingTone(ctx, input, 1318.51, now, 0.22);
+        this.playPingTone(ctx, input, 1760.00, now + 0.12, 0.45);
       }
     } catch (e) {
       console.warn('Could not play synthesized audio:', e);
     }
   }
 
-  private playTone(ctx: AudioContext, freq: number, startTime: number, duration: number, type: OscillatorType) {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+  private playPluckNote(ctx: AudioContext, destination: AudioNode, freq: number, startTime: number, duration: number) {
+    // Primary body oscillator (sine)
+    const osc1 = ctx.createOscillator();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(freq, startTime);
 
-    osc.type = type;
+    // Harmonic presence oscillator (triangle for clarity and projection on small phone speakers)
+    const osc2 = ctx.createOscillator();
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(freq, startTime);
+
+    const noteGain = ctx.createGain();
+    noteGain.gain.setValueAtTime(0.001, startTime);
+    noteGain.gain.linearRampToValueAtTime(0.85, startTime + 0.015);
+    noteGain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+    osc1.connect(noteGain);
+    osc2.connect(noteGain);
+    noteGain.connect(destination);
+
+    osc1.start(startTime);
+    osc2.start(startTime);
+    osc1.stop(startTime + duration + 0.05);
+    osc2.stop(startTime + duration + 0.05);
+  }
+
+  private playPingTone(ctx: AudioContext, destination: AudioNode, freq: number, startTime: number, duration: number) {
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
     osc.frequency.setValueAtTime(freq, startTime);
 
+    const gain = ctx.createGain();
     gain.gain.setValueAtTime(0.001, startTime);
-    gain.gain.exponentialRampToValueAtTime(0.3, startTime + 0.02);
+    gain.gain.linearRampToValueAtTime(0.9, startTime + 0.01);
     gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(destination);
 
     osc.start(startTime);
     osc.stop(startTime + duration + 0.05);
   }
 
-  private playHarmonicBell(ctx: AudioContext, baseFreq: number, startTime: number, duration: number) {
-    const harmonics = [1, 2, 3, 4.2];
-    const amplitudes = [0.25, 0.15, 0.08, 0.04];
+  private playResonantBell(ctx: AudioContext, destination: AudioNode, baseFreq: number, startTime: number, duration: number) {
+    // Harmonic frequencies for a real metal bell chime
+    const harmonics = [1, 2.01, 3.02, 4.15];
+    const amps = [0.85, 0.45, 0.25, 0.12];
 
     harmonics.forEach((h, idx) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
-      osc.type = 'sine';
+      osc.type = idx === 0 ? 'sine' : 'triangle';
       osc.frequency.setValueAtTime(baseFreq * h, startTime);
 
-      const amp = amplitudes[idx];
+      const amp = amps[idx];
       gain.gain.setValueAtTime(0.001, startTime);
-      gain.gain.exponentialRampToValueAtTime(amp, startTime + 0.015);
-      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + (duration / (idx + 1)));
+      gain.gain.linearRampToValueAtTime(amp, startTime + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + (duration / (idx * 0.7 + 1)));
 
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(destination);
 
       osc.start(startTime);
       osc.stop(startTime + duration);
@@ -86,6 +134,7 @@ class SoundManager {
         this.customAudio = new Audio(dataUri);
         this.customAudioDataUri = dataUri;
       }
+      this.customAudio.volume = 1.0; // Full volume
       this.customAudio.currentTime = 0;
       this.customAudio.play().catch(e => console.warn('Audio play error:', e));
     } catch (e) {
@@ -99,11 +148,10 @@ class SoundManager {
     } else if (soundType === 'chime' || soundType === 'bell' || soundType === 'ping') {
       this.playPreset(soundType);
     } else {
-      // System default - in web audio we play pleasant gentle chime as fallback
+      // System / default fallback tone: loud melodic chime
       this.playPreset('chime');
     }
   }
 }
 
 export const SoundService = new SoundManager();
-
